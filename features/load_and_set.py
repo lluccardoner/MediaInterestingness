@@ -38,13 +38,39 @@ def get_color_hist(video_num, set_type):
     return hist
 
 
-def set_results(video_num, res, prob, tofile):
-    path = '/home/lluc/Documents/ME16IN/testset/videos/video_' + str(video_num) + '/images'
+def get_dense_SIFT(video_num, set_type):
+    video_num = str(video_num)
+    path = '/home/lluc/Documents/ME16IN/' + set_type + '/features/Features_From_FudanUniversity/Image_Subtask/denseSIFT/video_' + video_num + '/images/'
     d = load_directory(path)
+    hist = np.empty((0, 300))
+    for file_name in d:
+        dic = scipy.io.loadmat(file_name=path + file_name)
+        v = dic.get('hists').item((0, 0))[0]  # 3 items of shape (300,1), (1200,1), (4800,1)
+        v = v.reshape((1, 300))
+        hist = np.append(hist, v, axis=0)
+    return hist
 
+def get_gist(video_num, set_type):
+    video_num = str(video_num)
+    path = '/home/lluc/Documents/ME16IN/' + set_type + '/features/Features_From_FudanUniversity/Image_Subtask/gist/video_' + video_num + '/images/'
+    d = load_directory(path)
+    hist = np.empty((0, 512))
+    for file_name in d:
+        dic = scipy.io.loadmat(file_name=path + file_name)
+        v = dic.get('descrs')
+        v = v.reshape((1, 512))
+        hist = np.append(hist, v, axis=0)
+    return hist
+
+def set_results(video_num, res, prob, tofile, feature):
+    """Sets the resuts to the submission file"""
+    path = '/home/lluc/Documents/ME16IN/testset/features/Features_From_FudanUniversity/Image_Subtask/' + feature + '/video_' + str(
+        video_num) + '/images/'
+    d = load_directory(path)
     # overriting what was inside already
     for i in range(len(d)):
         p = prob.item((i, 0))
         if res[i] == 1:
             p = prob.item((i, 1))
-        tofile.write('video_' + str(video_num) + ',' + str(d[i]) + ',' + str(res[i]) + ',' + str(p) + '\n')
+        tofile.write('video_' + str(video_num) + ',' + str(d[i])[:-4] + ',' + str(res[i]) + ',' + str(p) + '\n')
+
