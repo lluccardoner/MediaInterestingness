@@ -30,7 +30,7 @@ def get_color_hist(video_num, set_type):
     hist = np.empty((0, 128))
     for file_name in d:
         dic = scipy.io.loadmat(file_name=path + file_name)
-        if (set_type == 'devset'):
+        if set_type == 'devset':
             value = dic.get('hsv')
         else:
             value = dic.get('ColorHist')
@@ -50,6 +50,7 @@ def get_dense_SIFT(video_num, set_type):
         hist = np.append(hist, v, axis=0)
     return hist
 
+
 def get_gist(video_num, set_type):
     video_num = str(video_num)
     path = '/home/lluc/Documents/ME16IN/' + set_type + '/features/Features_From_FudanUniversity/Image_Subtask/gist/video_' + video_num + '/images/'
@@ -62,10 +63,39 @@ def get_gist(video_num, set_type):
         hist = np.append(hist, v, axis=0)
     return hist
 
+
+def get_hog2x2():
+    dic = scipy.io.loadmat(
+        '/home/lluc/Documents/ME16IN/devset/features/Features_From_FudanUniversity/Image_Subtask/hog2x2/video_0/images/107_102-113.jpg.mat')
+    v = dic.get('hists')
+    v = v.item(0)[2]  # 3 items of shape (300,1), (1200,1), (4800,1) the same as SIFT
+    print type(v)
+    print v.shape
+    return
+
+
+def get_fc7(video_num, set_type):
+    video_num = str(video_num)
+    path = '/home/lluc/Documents/ME16IN/' + set_type + '/features/Features_From_FudanUniversity/Image_Subtask/CNN/fc7/video_' + video_num + '/images/'
+    d = load_directory(path)
+    hist = np.empty((0, 4096))
+    for file_name in d:
+        dic = scipy.io.loadmat(file_name=path + file_name)
+        if set_type == 'devset':
+            v = dic.get('AlexNet_fc7')
+        else:
+            v = dic.get('fc7')
+        hist = np.append(hist, v, axis=0)
+    return hist
+
+
 def set_results(video_num, res, prob, tofile, feature):
     """Sets the resuts to the submission file"""
     path = '/home/lluc/Documents/ME16IN/testset/features/Features_From_FudanUniversity/Image_Subtask/' + feature + '/video_' + str(
         video_num) + '/images/'
+    if feature == 'fc7' or feature == 'prob':
+        path = '/home/lluc/Documents/ME16IN/testset/features/Features_From_FudanUniversity/Image_Subtask/CNN/' + feature + '/video_' + str(
+            video_num) + '/images'
     d = load_directory(path)
     # overriting what was inside already
     for i in range(len(d)):
@@ -73,4 +103,3 @@ def set_results(video_num, res, prob, tofile, feature):
         if res[i] == 1:
             p = prob.item((i, 1))
         tofile.write('video_' + str(video_num) + ',' + str(d[i])[:-4] + ',' + str(res[i]) + ',' + str(p) + '\n')
-
