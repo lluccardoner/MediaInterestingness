@@ -89,7 +89,7 @@ def get_fc7(video_num, set_type):
     return hist
 
 
-def set_results(video_num, res, prob, tofile, feature):
+def set_results_SVC(video_num, res, prob, tofile, feature):
     """Sets the resuts to the submission file"""
     path = '/home/lluc/Documents/ME16IN/testset/features/Features_From_FudanUniversity/Image_Subtask/' + feature + '/video_' + str(
         video_num) + '/images/'
@@ -102,4 +102,26 @@ def set_results(video_num, res, prob, tofile, feature):
         p = prob.item((i, 0))
         if res[i] == 1:
             p = prob.item((i, 1))
-        tofile.write('video_' + str(video_num) + ',' + str(d[i])[:-4] + ',' + str(res[i]) + ',' + str(p) + '\n')
+        s = str(d[i])[:-4]
+        if '.jpg' not in s:
+            s += '.jpg'
+        tofile.write(
+            'video_' + str(video_num) + ',' + s + ',' + str(res[i]) + ',' + str(p) + '\n')
+
+
+def set_results_one_class(video_num, res, tofile, feature):
+    """Sets the resuts to the submission file"""
+    path = '/home/lluc/Documents/ME16IN/testset/features/Features_From_FudanUniversity/Image_Subtask/' + feature + '/video_' + str(
+        video_num) + '/images/'
+    if feature == 'fc7' or feature == 'prob':
+        path = '/home/lluc/Documents/ME16IN/testset/features/Features_From_FudanUniversity/Image_Subtask/CNN/' + feature + '/video_' + str(
+            video_num) + '/images'
+    d = load_directory(path)
+    # overriting what was inside already
+    for i in range(len(d)):
+        if res[i] == -1:
+            pred = '0'
+        else:
+            pred = '1'
+        s = str(d[i])[:-4] + '.jpg'
+        tofile.write('video_' + str(video_num) + ',' + s + ',' + pred + ',' + '1' + '\n')

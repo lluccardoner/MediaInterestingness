@@ -25,7 +25,6 @@ for i in range(total_video_num_devtest):
     x = np.append(x, l.get_color_hist(i, 'devset'), axis=0)
     y = np.append(y, l.get_annotations('image', i, 'devset'))
 
-print y
 # train the classifier
 print 'Start training'
 t0 = time.time()
@@ -33,8 +32,8 @@ clf.fit(x, y)
 print("Training time: %s s" % (time.time() - t0))
 
 # get the set data and write to file
-open('/home/lluc/Documents/ME16IN/devset/scripts/me16in_wien_image_colorhist.txt', 'w').close()
-f = open('/home/lluc/Documents/ME16IN/devset/scripts/me16in_wien_image_colorhist.txt', 'a')
+open('/home/lluc/Documents/trec_eval.8.1/SVM_results/me16in_wien_image_colorhist.txt', 'w').close()
+f = open('/home/lluc/Documents/trec_eval.8.1/SVM_results/me16in_wien_image_colorhist.txt', 'a')
 
 for i in range(total_video_num_devtest, total_video_num_devtest + total_video_num_testset):
     # p = np.append(p, lf.get_color_hist(i, 'testset'), axis=0)
@@ -46,4 +45,4 @@ for i in range(total_video_num_devtest, total_video_num_devtest + total_video_nu
     res = clf.predict(p)
     prob = clf.predict_proba(p)
     # write results to file
-    l.set_results(i, res, prob, f, 'ColorHist')
+    l.set_results_SVC(i, res, prob, f, 'ColorHist')
