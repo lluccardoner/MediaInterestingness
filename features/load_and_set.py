@@ -2,6 +2,7 @@ from os import listdir
 from os.path import isfile, join
 import numpy as np
 import scipy.io
+from keras.preprocessing import image
 
 
 def load_directory(mypath):
@@ -125,3 +126,29 @@ def set_results_one_class(video_num, res, tofile, feature):
             pred = '1'
         s = str(d[i])[:-4] + '.jpg'
         tofile.write('video_' + str(video_num) + ',' + s + ',' + pred + ',' + '1' + '\n')
+
+
+def load_images_devset():
+    total_video_num_devtest = 52
+    img_array = []
+    for i in range(total_video_num_devtest):
+        path = '/home/lluc/Documents/ME16IN/devset/videos/video_' + str(i) + '/images/'
+        d = load_directory(path)
+        for img_name in d:
+            img = image.load_img(path + img_name, target_size=(224, 224))
+            img = image.img_to_array(img)
+            img_array.append(img)
+    return np.array(img_array)
+
+
+def load_images_testset():
+    total_video_num_testset = 26
+    img_array = []
+    for i in range(52, 52 + total_video_num_testset):
+        path = '/home/lluc/Documents/ME16IN/testset/videos/video_' + str(i) + '/images/'
+        d = load_directory(path)
+        for img_name in d:
+            img = image.load_img(path + img_name, target_size=(224, 224))
+            img = image.img_to_array(img)
+            img_array.append(img)
+    return np.array(img_array)
