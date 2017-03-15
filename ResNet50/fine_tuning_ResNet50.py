@@ -32,23 +32,24 @@ model.compile(optimizer='rmsprop', loss='binary_crossentropy')
 # Load images
 print 'Loading images...'
 dev_img = l.load_images_devset()
-test_img = l.load_images_testset()
 
 # Load labels
 print 'Loading labels...'
 dev_labels = np.empty((0, dev_img.shape[0]), dtype=int)
-test_labels = np.empty((0, test_img.shape[0]), dtype=int)
 for i in range(total_video_num_devtest):
     x = l.get_annotations('image', i, 'devset')
     dev_labels = np.append(dev_labels, x)
-for i in range(total_video_num_devtest, total_video_num_devtest + total_video_num_testset):
-    x = l.get_annotations('image', i, 'testset')
-    test_labels = np.append(test_labels, x)
 
 # train the model on the new data for a few epochs
 print 'Fitting model...'
 history = model.fit(dev_img, dev_labels, batch_size=32, nb_epoch=10, verbose=2)
 
-# get predictions
-score = model.predict(test_img, test_labels, verbose=0)
-print score
+print("Saving model and weights")
+model_json = model.to_json()
+
+with open("/home/lluc/PycharmProjects/TFG/ResNet50/ResNet50.json", "w") as json_file:
+    json_file.write(model_json)
+print("saving...")
+model.save_weights('resnet50_weights.h5')
+
+
