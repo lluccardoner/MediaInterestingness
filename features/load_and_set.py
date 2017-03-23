@@ -129,6 +129,7 @@ def set_results_one_class(video_num, res, tofile, feature):
 
 
 def load_images_devset():
+    """Load all the images with annotations from devset"""
     total_video_num_devtest = 52
     img_array = []
     for i in range(total_video_num_devtest):
@@ -141,7 +142,22 @@ def load_images_devset():
     return np.array(img_array)
 
 
+def load_labeled_images_devset():
+    """Load just the images with annotations from devset"""
+    img_array = []
+    annotations_path = '/home/lluc/Documents/ME16IN/devset/annotations/devset-image.txt'
+    with open(annotations_path) as inputfile:
+        for line in inputfile:
+            l = line.strip().split(',')
+            path = '/home/lluc/Documents/ME16IN/devset/videos/' + l[0] + '/images/' + l[1]
+            img = image.load_img(path, target_size=(224, 224))
+            img = image.img_to_array(img)
+            img_array.append(img)
+    return np.array(img_array)
+
+
 def load_images_testset():
+    """Load all the images with annotations from testset"""
     total_video_num_testset = 26
     img_array = []
     for i in range(52, 52 + total_video_num_testset):
@@ -152,3 +168,24 @@ def load_images_testset():
             img = image.img_to_array(img)
             img_array.append(img)
     return np.array(img_array)
+
+
+def load_labeled_images_testset():
+    """Load just the images with annotations from testset"""
+    img_array = []
+    img_names = []
+    annotations_path = '/home/lluc/Documents/ME16IN/testset/annotations/testset-image.txt'
+    with open(annotations_path) as inputfile:
+        for line in inputfile:
+            l = line.strip().split(',')
+            path = '/home/lluc/Documents/ME16IN/testset/videos/' + l[0] + '/images/' + l[1]
+            img = image.load_img(path, target_size=(224, 224))
+            img = image.img_to_array(img)
+            img_array.append(img)
+            name = [l[0], l[1]]
+            img_names.append(name)
+        img_names = np.array(img_names)
+        img_array = np.array(img_array)
+    return img_array, img_names
+
+
