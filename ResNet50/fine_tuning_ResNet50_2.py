@@ -3,6 +3,7 @@ import traceback
 
 import logging
 from keras.applications.resnet50 import ResNet50
+from keras.callbacks import *
 from keras.layers import Dense
 from keras.models import Model
 from keras.optimizers import RMSprop, Adam
@@ -47,15 +48,15 @@ try:
     # add layers
     a = base_model.get_layer('flatten_1').output  # returns a Tensor
     b = Dense(1024, activation='relu')(a)
-    c = Dense(512, activation='relu')(b)
-    d = Dense(256, activation='relu')(c)
-    e = Dense(128, activation='relu')(d)
-    f = Dense(64, activation='relu')(e)
-    g = Dense(32, activation='relu')(f)
-    h = Dense(16, activation='relu')(g)
-    i = Dense(8, activation='relu')(h)
-    j = Dense(4, activation='relu')(i)
-    predictions = Dense(2, activation='softmax')(j)
+    # c = Dense(512, activation='relu')(b)
+    d = Dense(256, activation='relu')(b)
+    # e = Dense(128, activation='relu')(d)
+    # f = Dense(64, activation='relu')(e)
+    # g = Dense(32, activation='relu')(f)
+    # h = Dense(16, activation='relu')(g)
+    # i = Dense(8, activation='relu')(h)
+    # j = Dense(4, activation='relu')(i)
+    predictions = Dense(2, activation='softmax')(d)
 
     # this is the model we will train
     model = Model(input=base_model.input, output=predictions)
@@ -132,7 +133,7 @@ try:
     model_json = model.to_json()
 
     with open(model_json_file, "w") as json_file:
-        json_file.write(model_json)
+         json_file.write(model_json)
     print("saving...")
     model.save_weights(model_weights_file)
 
