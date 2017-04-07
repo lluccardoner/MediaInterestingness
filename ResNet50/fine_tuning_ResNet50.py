@@ -53,7 +53,7 @@ model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])  # Load imag
 
 # Load images
 print ('Loading images...')
-img = l.load_images_devset()
+img = l.load_labeled_images_devset()
 dev_img = img[:4044]
 val_img = img[4044:]
 print (dev_img.shape)

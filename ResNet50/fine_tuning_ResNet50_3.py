@@ -3,13 +3,13 @@ import traceback
 import matplotlib.pyplot as plt
 import time
 from keras.applications.resnet50 import ResNet50
-from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau
-from keras.layers import Dense
+from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
+from keras.layers import Dense, Dropout
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
 import numpy as np
-from ResNet50.callbacks import EarlyStopping
+# from ResNet50.callbacks import EarlyStopping
 from telegramBot import bot
 
 #########################################
@@ -25,24 +25,27 @@ try:
     ###########################################
     total_video_num_devtest = 52
     total_video_num_testset = 26
-    nb_epoch = 100
+    nb_epoch = 200
     batch_size = 32
-    learning_rate = 0.001
+    learning_rate = 0.0001
     loss = 'binary_crossentropy'
     # optimizer = RMSprop(lr=learning_rate)
     optimizer = Adam(lr=learning_rate)
     nb_train_samples = 2400  # should be multiple of batch size
     nb_validation_samples = 800  # should be multiple of batch size
-    class_weights = [{0: 0.1, 1: 1.}, {0: 0.5, 1: 1.}, {0: 0.7, 1: 1.}, {0: 1., 1: 10.}]
-    validation_weights = class_weights
-    stop_patience = 100
+    # class_weights = {0: 0.7, 1: 1.}  # [{0: 0.1, 1: 1.}, {0: 0.5, 1: 1.}, {0: 0.7, 1: 1.}, {0: 1., 1: 10.}]
+    class_weights = {0: 0.1899, 1: 1.8054}  # model 21 and 26
+    # class_weights = {0: 0.3469, 1: 1.6531}  # model 29
+    # validation_weights = class_weights
+    stop_patience = 200
     stop_cooldown = 10
     ############################################
-    number = 19
+    number = 36
     model_json_file = 'src/ResNet50_' + str(number) + '_model.json'
-    model_weights_file = 'src/resnet50_' + str(number) + '_weights.h5'
+    # model_weights_file = 'src/resnet50_' + str(number) + '_weights.h5'
     model_fig = 'src/model_' + str(number) + '.png'
-    model_checkpoint = 'src/resnet50_' + str(number) + '_{epoch:02d}-{val_loss:.2f}.hdf5'
+    # model_checkpoint = 'src/resnet50_' + str(number) + '_{epoch:02d}-{val_loss:.2f}.hdf5'
+    model_checkpoint = 'src/resnet50_' + str(number) + '_weights.hdf5'
     ###########################################
 
     # create the base pre-trained model
@@ -54,6 +57,7 @@ try:
     c = Dense(1024, activation='relu')(a)
     # d = Dropout(0.5)(c)
     e = Dense(256, activation='relu')(c)
+    # f = Dropout(0.5)(e)
     predictions = Dense(2, activation='softmax')(e)
 
     # this is the model we will train
@@ -66,20 +70,24 @@ try:
 
     model.summary()
     # compile the model (should be done *after* setting layers to non-trainable)
-    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])  # Load images
+    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
 
     # Load data
     print ('Loading data with ImageDataGenerator')
-    train_datagen = ImageDataGenerator(horizontal_flip=True)
+    # TODO data augmentation
+    train_datagen = ImageDataGenerator(horizontal_flip=True, zoom_range=0.25, height_shift_range=0.25,
+                                       width_shift_range=0.125)
+    # train_datagen = ImageDataGenerator()
 
     test_datagen = ImageDataGenerator()
 
+    # TODO change directory
     train_generator = train_datagen.flow_from_directory(
         'data/train',
         target_size=(224, 224),
         batch_size=32,
         class_mode='categorical',
-        save_prefix='aug_')  # save_to_dir='data/augmented')
+        save_prefix='aug36', save_to_dir='data/augmented')
 
     validation_generator = test_datagen.flow_from_directory(
         'data/validation',
@@ -87,76 +95,93 @@ try:
         batch_size=32,
         class_mode='categorical')
 
-    for weights in class_weights:
-        model_json_file = 'src/ResNet50_' + str(number) + '_model.json'
-        model_weights_file = 'src/resnet50_' + str(number) + '_weights.h5'
-        model_fig = 'src/model_' + str(number) + '.png'
-        model_checkpoint = 'src/resnet50_' + str(number) + '_{epoch:02d}-{val_loss:.2f}.hdf5'
-        # callbacks
-        checkpointer = ModelCheckpoint(filepath=model_checkpoint,
-                                       verbose=1,
-                                       save_best_only=True)
-        reduce_lr = ReduceLROnPlateau(monitor='val_loss',
-                                      factor=0.1,
-                                      patience=5,
-                                      min_lr=0,
-                                      verbose=1)
+    # callbacks
+    checkpointer = ModelCheckpoint(filepath=model_checkpoint,
+                                   verbose=1,
+                                   save_best_only=True)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss',
+                                  factor=0.1,
+                                  patience=5,
+                                  min_lr=0,
+                                  verbose=1)
 
-        early_stop = EarlyStopping(monitor='val_loss', min_delta=0, patience=stop_patience,
-                                   cooldown=stop_cooldown)
+    early_stop = EarlyStopping(monitor='val_loss', min_delta=0, patience=stop_patience)
+    # cooldown=stop_cooldown)
 
-        print ('Fitting model ' + str(number))
-        tr_loss = []
-        val_loss = []
-        tr_acc = []
-        val_acc = []
+    print ('Fitting model ' + str(number))
+    tr_loss = []
+    val_loss = []
+    tr_acc = []
+    val_acc = []
+    # TODO change number epochs, class weights
+    history = model.fit_generator(
+        train_generator,
+        samples_per_epoch=nb_train_samples,
+        nb_epoch=nb_epoch,
+        validation_data=validation_generator,
+        nb_val_samples=nb_validation_samples,
+        verbose=2,
+        callbacks=[checkpointer, reduce_lr, early_stop],
+        class_weight=class_weights)
 
-        history = model.fit_generator(
-            train_generator,
-            samples_per_epoch=nb_train_samples,
-            nb_epoch=nb_epoch,
-            validation_data=validation_generator,
-            nb_val_samples=nb_validation_samples,
-            verbose=2,
-            callbacks=[checkpointer, reduce_lr, early_stop],
-            class_weight=weights)
+    # TODO for model 24 and 25 train last layers of resnet
+    # we chose to train the top 2 inception blocks, i.e. we will freeze
+    # the first 172 layers and unfreeze the rest:
+    # for layer in model.layers[:162]:
+    #     layer.trainable = False
+    # for layer in model.layers[162:]:
+    #     layer.trainable = True
+    # # we need to recompile the model for these modifications to take effect
+    # model.summary()
+    # model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
+    # # we train our model again (this time fine-tuning the top 2 inception blocks
+    # # alongside the top Dense layers
+    # history = model.fit_generator(
+    #     train_generator,
+    #     samples_per_epoch=nb_train_samples,
+    #     nb_epoch=nb_epoch,
+    #     validation_data=validation_generator,
+    #     nb_val_samples=nb_validation_samples,
+    #     verbose=2,
+    #     callbacks=[checkpointer, reduce_lr, early_stop],
+    #     class_weight=class_weights)
 
-        tr_loss.extend(history.history['loss'])
-        val_loss.extend(history.history['val_loss'])
-        tr_acc.extend(history.history['acc'])
-        val_acc.extend(history.history['val_acc'])
+    tr_loss.extend(history.history['loss'])
+    val_loss.extend(history.history['val_loss'])
+    tr_acc.extend(history.history['acc'])
+    val_acc.extend(history.history['val_acc'])
 
-        # Show plots
-        x = np.arange(len(val_loss))
-        fig = plt.figure(1)
-        fig.suptitle('TRAINNING vs VALIDATION', fontsize=14, fontweight='bold')
+    # Show plots
+    x = np.arange(len(val_loss))
+    fig = plt.figure(1)
+    fig.suptitle('TRAINNING vs VALIDATION', fontsize=14, fontweight='bold')
 
-        # LOSS: TRAINING vs VALIDATION
-        sub_plot1 = fig.add_subplot(211)
+    # LOSS: TRAINING vs VALIDATION
+    sub_plot1 = fig.add_subplot(211)
 
-        plt.plot(x, tr_loss, '--', linewidth=2, label='tr_loss')
-        plt.plot(x, val_loss, label='va_loss')
-        plt.legend(loc='upper right')
+    plt.plot(x, tr_loss, '--', linewidth=2, label='tr_loss')
+    plt.plot(x, val_loss, label='va_loss')
+    plt.legend(loc='upper right')
 
-        # ACCURACY: TRAINING vs VALIDATION
-        sub_plot2 = fig.add_subplot(212)
+    # ACCURACY: TRAINING vs VALIDATION
+    sub_plot2 = fig.add_subplot(212)
 
-        plt.plot(x, tr_acc, '--', linewidth=2, label='tr_acc')
-        plt.plot(x, val_acc, label='val_acc')
-        plt.legend(loc='lower right')
+    plt.plot(x, tr_acc, '--', linewidth=2, label='tr_acc')
+    plt.plot(x, val_acc, label='val_acc')
+    plt.legend(loc='lower right')
 
-        print("\n Saving model...")
-        model_json = model.to_json()
-        with open(model_json_file, "w") as json_file:
-            json_file.write(model_json)
-        # print("saving...")
-        # model.save_weights(model_weights_file)
+    print("\n Saving model...")
+    model_json = model.to_json()
+    with open(model_json_file, "w") as json_file:
+        json_file.write(model_json)
+    # print("saving...")
+    # model.save_weights(model_weights_file) # is done by the check point
 
-        plt.savefig(model_fig)
-        execution_time = (time.time() - t0) / 60
-        print('Execution time model ' + str(number) + ' (min): ' + str(execution_time))
-        bot.send_message('Execution time model ' + str(number) + ' (min): ' + str(execution_time))
-        number += 1
+    plt.savefig(model_fig)
+    execution_time = (time.time() - t0) / 60
+    print('Execution time model ' + str(number) + ' (min): ' + str(execution_time))
+    bot.send_message('Execution time model ' + str(number) + ' (min): ' + str(execution_time))
+    bot.send_image(number)
 
 except Exception:
     logging.error(traceback.format_exc())

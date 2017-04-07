@@ -461,13 +461,15 @@ class EarlyStopping(Callback):
             if self.monitor_op(current - self.min_delta, self.best):
                 self.best = current
                 self.wait = 0
+                print('Epoch %05d: early stopping in cooldown' % epoch)
+
             else:
                 if self.wait >= self.patience:
                     self.stopped_epoch = epoch
                     self.model.stop_training = True
                 self.wait += 1
         else:
-            print('Epoch %05d: cooldown' % epoch)
+            print('Epoch %05d: early stopping in cooldown' % epoch)
 
     def on_train_end(self, logs=None):
         if self.stopped_epoch > 0 and self.verbose > 0:
