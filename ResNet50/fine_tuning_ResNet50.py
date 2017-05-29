@@ -1,12 +1,14 @@
 import time
+
+import matplotlib.pyplot as plt
+import numpy as np
 from keras.applications.resnet50 import ResNet50
 from keras.layers import Dense
 from keras.models import Model
-from keras.optimizers import RMSprop, Adam
+from keras.optimizers import Adam
 from keras.utils.np_utils import to_categorical
-import features.load_and_set as l
-import numpy as np
-import matplotlib.pyplot as plt
+
+import img_features.load_and_set as l
 from telegramBot import bot
 
 t0 = time.time()

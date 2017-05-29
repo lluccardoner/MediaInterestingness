@@ -26,4 +26,4 @@ def set_execution_environment_path():
 
 
 def get_cifar10_hog_directory():
-    return os.path.join(get_dataset_directory(), "cifar-10-hog-features")
+    return os.path.join(get_dataset_directory(), "cifar-10-hog-img_features")

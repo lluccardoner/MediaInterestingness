@@ -1,16 +1,17 @@
 import logging
-import traceback
-import matplotlib.pyplot as plt
 import time
+import traceback
+
+import matplotlib.pyplot as plt
+import numpy as np
 from keras.applications.resnet50 import ResNet50
 from keras.callbacks import ModelCheckpoint, ReduceLROnPlateau, EarlyStopping
-from keras.layers import Dense, Dropout
+from keras.layers import Dense
 from keras.models import Model
 from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
-import numpy as np
-# from ResNet50.callbacks import EarlyStopping
-from telegramBot import bot
+
+import bot
 
 #########################################
 # Using data augmentation with Keras    #
@@ -18,29 +19,27 @@ from telegramBot import bot
 # Using keras callbacks                 #
 #########################################
 try:
+    # Execution time
     t0 = time.time()
-
+    # Option to see all the np array on the console
     np.set_printoptions(threshold=np.nan)
 
     ###########################################
     total_video_num_devtest = 52
     total_video_num_testset = 26
-    nb_epoch = 200
+    nb_epoch = 100
     batch_size = 32
     learning_rate = 0.0001
     loss = 'binary_crossentropy'
-    # optimizer = RMSprop(lr=learning_rate)
     optimizer = Adam(lr=learning_rate)
     nb_train_samples = 2400  # should be multiple of batch size
     nb_validation_samples = 800  # should be multiple of batch size
-    # class_weights = {0: 0.7, 1: 1.}  # [{0: 0.1, 1: 1.}, {0: 0.5, 1: 1.}, {0: 0.7, 1: 1.}, {0: 1., 1: 10.}]
-    class_weights = {0: 0.1899, 1: 1.8054}  # model 21 and 26
-    # class_weights = {0: 0.3469, 1: 1.6531}  # model 29
-    # validation_weights = class_weights
-    stop_patience = 200
-    stop_cooldown = 10
+    # class_weights = {0: 0.1899, 1: 1.8054}  # model 21 and 26 (for the full data set)
+    # class_weights = {0: 0.3469, 1: 1.6531}  # model 29 (augmentation just in the interesting class)
+    stop_patience = 20  # Patience for the early stop callback
     ############################################
-    number = 36
+    number = 49  # Model number
+    bot.send_message('Model ' + str(number))
     model_json_file = 'src/ResNet50_' + str(number) + '_model.json'
     # model_weights_file = 'src/resnet50_' + str(number) + '_weights.h5'
     model_fig = 'src/model_' + str(number) + '.png'
@@ -75,9 +74,9 @@ try:
     # Load data
     print ('Loading data with ImageDataGenerator')
     # TODO data augmentation
-    train_datagen = ImageDataGenerator(horizontal_flip=True, zoom_range=0.25, height_shift_range=0.25,
-                                       width_shift_range=0.125)
-    # train_datagen = ImageDataGenerator()
+    # train_datagen = ImageDataGenerator(horizontal_flip=True, zoom_range=0.25, height_shift_range=0.25, width_shift_range=0.125)
+
+    train_datagen = ImageDataGenerator(horizontal_flip=True)
 
     test_datagen = ImageDataGenerator()
 
@@ -86,8 +85,8 @@ try:
         'data/train',
         target_size=(224, 224),
         batch_size=32,
-        class_mode='categorical',
-        save_prefix='aug36', save_to_dir='data/augmented')
+        class_mode='categorical')
+        # save_prefix='aug', save_to_dir='data/augmented')
 
     validation_generator = test_datagen.flow_from_directory(
         'data/validation',
@@ -106,7 +105,6 @@ try:
                                   verbose=1)
 
     early_stop = EarlyStopping(monitor='val_loss', min_delta=0, patience=stop_patience)
-    # cooldown=stop_cooldown)
 
     print ('Fitting model ' + str(number))
     tr_loss = []
@@ -117,34 +115,34 @@ try:
     history = model.fit_generator(
         train_generator,
         samples_per_epoch=nb_train_samples,
-        nb_epoch=nb_epoch,
+        nb_epoch=10,
         validation_data=validation_generator,
         nb_val_samples=nb_validation_samples,
-        verbose=2,
-        callbacks=[checkpointer, reduce_lr, early_stop],
-        class_weight=class_weights)
+        verbose=2)
+        # callbacks=[checkpointer, reduce_lr, early_stop])
+        # class_weight=class_weights)
 
     # TODO for model 24 and 25 train last layers of resnet
     # we chose to train the top 2 inception blocks, i.e. we will freeze
     # the first 172 layers and unfreeze the rest:
-    # for layer in model.layers[:162]:
-    #     layer.trainable = False
-    # for layer in model.layers[162:]:
-    #     layer.trainable = True
-    # # we need to recompile the model for these modifications to take effect
-    # model.summary()
-    # model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
-    # # we train our model again (this time fine-tuning the top 2 inception blocks
-    # # alongside the top Dense layers
-    # history = model.fit_generator(
-    #     train_generator,
-    #     samples_per_epoch=nb_train_samples,
-    #     nb_epoch=nb_epoch,
-    #     validation_data=validation_generator,
-    #     nb_val_samples=nb_validation_samples,
-    #     verbose=2,
-    #     callbacks=[checkpointer, reduce_lr, early_stop],
-    #     class_weight=class_weights)
+    for layer in model.layers[:162]:
+        layer.trainable = False
+    for layer in model.layers[162:]:
+        layer.trainable = True
+    # we need to recompile the model for these modifications to take effect
+    model.summary()
+    model.compile(optimizer=optimizer, loss=loss, metrics=['accuracy'])
+    # we train our model again (this time fine-tuning the top 2 inception blocks
+    # alongside the top Dense layers
+    history = model.fit_generator(
+        train_generator,
+        samples_per_epoch=nb_train_samples,
+        nb_epoch=nb_epoch,
+        validation_data=validation_generator,
+        nb_val_samples=nb_validation_samples,
+        verbose=2,
+        callbacks=[checkpointer, reduce_lr, early_stop])
+        # class_weight=class_weights)
 
     tr_loss.extend(history.history['loss'])
     val_loss.extend(history.history['val_loss'])
@@ -185,4 +183,4 @@ try:
 
 except Exception:
     logging.error(traceback.format_exc())
-    bot.send_message('Exception caught: ' + str(Exception.message))
+    bot.send_message('Exception caught')

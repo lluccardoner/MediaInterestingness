@@ -1,6 +1,6 @@
 import numpy as np
 from keras.models import model_from_json
-import features.load_and_set as l
+import img_features.load_and_set as l
 from keras.models import Model
 import h5py
 
@@ -10,7 +10,7 @@ total_video_num_devtest = 52
 total_video_num_testset = 26
 
 ###############################################
-number = '35'
+number = '48'
 model_json_file = 'src/ResNet50_' + number + '_model.json'
 # model_weights_file = 'src/resnet50_' + number + '_weights.h5'
 model_weights_file = 'src/resnet50_' + number + '_weights.hdf5'

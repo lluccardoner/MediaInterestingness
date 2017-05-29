@@ -1,15 +1,14 @@
-import time
+import logging
 import traceback
 
-import logging
+import matplotlib.pyplot as plt
 from keras.applications.resnet50 import ResNet50
 from keras.callbacks import *
 from keras.layers import Dense
 from keras.models import Model
-from keras.optimizers import RMSprop, Adam
+from keras.optimizers import Adam
 from keras.preprocessing.image import ImageDataGenerator
-import numpy as np
-import matplotlib.pyplot as plt
+
 from telegramBot import bot
 
 #########################################

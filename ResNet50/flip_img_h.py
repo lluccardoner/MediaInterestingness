@@ -1,5 +1,5 @@
 from PIL import Image
-from features import load_and_set as l
+from img_features import load_and_set as l
 
 path = 'data/balanced_1/train/1/'
 
