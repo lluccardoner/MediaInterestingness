@@ -5,6 +5,7 @@
     <mapping directory="$PROJECT_DIR$/../C3D-tensorflow" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../activitynet-2016-cvprw" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../dlsl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/../python-telegram-bot" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/../retrieval-2016-remote" vcs="Git" />
   </component>
 </project>

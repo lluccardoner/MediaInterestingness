@@ -24,13 +24,6 @@ test_img, img_names = l.load_labeled_images_testset()
 print('Test', test_img.shape)
 print('Names', img_names.shape)
 
-# Load labels
-# print 'Loading labels...'
-# test_labels = np.empty((0, test_img.shape[0]), dtype=int)
-# for i in range(total_video_num_devtest, total_video_num_devtest + total_video_num_testset):
-#    x = l.get_annotations('image', i, 'testset')
-#    test_labels = np.append(test_labels, x)
-
 # load json and create model
 print ('Loading model and weights...')
 json_file = open(model_json_file, 'r')

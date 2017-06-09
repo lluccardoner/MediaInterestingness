@@ -1,9 +1,10 @@
 # copy videos with less than 16 frames
 
-from img_features import load_and_set as l
-import video_prop as vp
 import os
 from shutil import copyfile
+
+import video.pre_processing.video_prop as vp
+from img_features import load_and_set as l
 
 
 def copy_videos():
@@ -60,8 +61,6 @@ check_frames()
 
 
 def tests():
-    from shutil import copyfile, move
-
     less_frames = 0
     errors = 0
     moved = 0
@@ -95,7 +94,7 @@ def tests():
 
 
 def new_video_database():
-    from shutil import copyfile, move
+    from shutil import move
 
     copied = 0
     not_copied = 0
