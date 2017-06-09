@@ -111,18 +111,15 @@ def label_mapping_with_weights():
                     # print(clip_num_1)
                 elif clip_num_2 > clip_num_1:
                     j = frames  # counts the frames form [frames to frames2]
-                    z = 0 # number of frames in the previous clip for this segment
+                    z = 0  # number of frames in the previous clip for this segment
                     for i in range(clip_num_1, clip_num_2 + 1):
                         while j // 16 == i and j < frames2:
                             j += 1
-                        s.set_clip_num((i, j-frames-z))
-                        z = j -frames
+                        s.set_clip_num((i, j - frames - z))
+                        z = j - frames
                         # print(i)
                 frames = frames2
 
-    print(segments[0])
-    print(segments[1])
-    '''
     # get the probabilities from each segment for a clip
     values = {}
     for v in range(total_videos):
@@ -131,22 +128,26 @@ def label_mapping_with_weights():
             video_num = int(s.video.split('_')[1])
             if v == video_num:
                 c = s.clip_nums
-                for n in c:
-                    tmp = clips.get(n, [])
-                    tmp.append(float(s.prob))
-                    clips[n] = tmp
+                for n in c:  # n is a tupple with (clip_num, num_frames)
+                    clip_num = n[0]
+                    frms = n[1]
+                    tmp = clips.get(clip_num, [])
+                    tmp.append((float(s.prob), frms))
+                    clips[clip_num] = tmp
         values['video_{}'.format(v)] = clips
 
     # calculate the average and save the label
-    dev_labels = out_file.create_group('devset_labels')
+    dev_labels = out_file.create_group('devset_labels_weighted')
     for v in values.keys():
         vi = dev_labels.create_group(v)
         cl = values.get(v)
         for c in cl.keys():
-            label = np.array(cl.get(c)).mean()
-            vi.create_dataset('clip_{}'.format(c), data=label)
-            print(c, label)
-'''
+            arr = cl.get(c)  # array of values for the clip 'c'
+            a = [x[0] for x in arr]  # probabilities
+            w = [x[1] for x in arr]  # weights
+            if sum(w) != 0:
+                label = np.average(a, weights=w)
+                vi.create_dataset('clip_{}'.format(c), data=label)
+            print('{}: clip {} - label {}'.format(v, c, label))
 
 
-label_mapping_with_weights()
