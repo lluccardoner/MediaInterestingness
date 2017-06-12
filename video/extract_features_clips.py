@@ -1,3 +1,11 @@
+"""
+
+Author: Lluc Cardoner
+
+Extract features of each clip of 16 frames with the C3D and save them.
+
+"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 import multiprocessing
@@ -123,21 +131,21 @@ def save_clips_features():
     out_file = h5py.File('/home/lluc/PycharmProjects/TFG/video/data/features_clips.h5py', 'a')
     my_model = load_model()
 
-    # # devset
-    # set = 'devset'
-    # devset = out_file.create_group(set)
-    # for v in in_file[set]:
-    #     video = devset.create_group(v)
-    #     num_clips = len(in_file[set][v].keys())
-    #     print("{} with {} clips".format(v, num_clips))
-    #     bar = progressbar.ProgressBar(max_value=num_clips)
-    #     for i, c in enumerate(in_file[set][v]):
-    #         X = in_file[set][v][c]
-    #         # print(i, cl.shape)
-    #         assert X.shape == (3, 16, 112, 112), "{} from {} has shape {}".format(c, v, X.shape)
-    #         Y = extract_features_clip(X, my_model)
-    #         video.create_dataset(c, data=Y)
-    #         bar.update(i)
+    # devset
+    set = 'devset'
+    devset = out_file.create_group(set)
+    for v in in_file[set]:
+        video = devset.create_group(v)
+        num_clips = len(in_file[set][v].keys())
+        print("{} with {} clips".format(v, num_clips))
+        bar = progressbar.ProgressBar(max_value=num_clips)
+        for i, c in enumerate(in_file[set][v]):
+            X = in_file[set][v][c]
+            # print(i, cl.shape)
+            assert X.shape == (3, 16, 112, 112), "{} from {} has shape {}".format(c, v, X.shape)
+            Y = extract_features_clip(X, my_model)
+            video.create_dataset(c, data=Y)
+            bar.update(i)
 
     # testset
     set = 'testset'
@@ -154,6 +162,3 @@ def save_clips_features():
             Y = extract_features_clip(X, my_model)
             video.create_dataset(c, data=Y)
             bar.update(i)
-
-
-save_clips_features()

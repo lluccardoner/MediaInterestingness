@@ -2,6 +2,8 @@ import inspect
 import os
 import sys
 
+# path tools
+
 
 def get_solution_directory():
     # Assumes that all scripts that are actually executed reside in a sub-folder of AssignmentX,
@@ -26,4 +28,4 @@ def set_execution_environment_path():
 
 
 def get_cifar10_hog_directory():
-    return os.path.join(get_dataset_directory(), "cifar-10-hog-img_features")
+    return os.path.join(get_dataset_directory(), "cifar-10-hog-SVM_image_features")

@@ -1,3 +1,11 @@
+"""
+
+Author: Lluc Cardoner
+
+Training of an LSTM network for predicting video interestingness from C3D video features
+
+"""
+
 from __future__ import print_function
 import logging
 import traceback
@@ -10,7 +18,7 @@ from keras.models import Model, Sequential
 from keras.optimizers import Adam, RMSprop
 import time
 from telegramBot import bot
-from img_features import load_and_set as l
+from SVM_image_features import load_and_set as l
 import h5py
 import os
 import matplotlib.pyplot as plt

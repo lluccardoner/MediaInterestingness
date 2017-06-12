@@ -4,7 +4,7 @@ import os
 from shutil import copyfile
 
 import video.pre_processing.video_prop as vp
-from img_features import load_and_set as l
+from SVM_image_features import load_and_set as l
 
 
 def copy_videos():

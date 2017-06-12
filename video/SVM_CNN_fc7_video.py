@@ -1,7 +1,16 @@
+"""
+
+Author: Lluc Cardoner
+
+SVM classifier for CNN fc7 frame based features of videos.
+Predicting video interestingness.
+
+"""
+
 import numpy as np
 import time
 from sklearn.svm import SVC  # http://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#
-import img_features.load_and_set as l
+import SVM_image_features.load_and_set as l
 
 np.set_printoptions(threshold=np.nan)
 
@@ -17,7 +26,7 @@ y = np.empty((0, 1), dtype=int)
 p = np.empty((0, num_features_fc7))
 q = np.empty((0, 1))
 
-print 'Get data'
+print ('Get data')
 # get the devset data
 for i in range(total_video_num_devtest):
     features = l.get_fc7_video(i, 'devset') ### The feature vector are given per frame of each clip
@@ -27,7 +36,7 @@ for i in range(total_video_num_devtest):
 
 print(x.shape, y.shape)
 # train the classifier
-print 'Start training'
+print ('Start training')
 t0 = time.time()
 clf.fit(x, y)
 print("Training time: %s s" % (time.time() - t0))

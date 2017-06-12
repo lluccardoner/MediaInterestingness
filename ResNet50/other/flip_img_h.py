@@ -1,6 +1,7 @@
 from PIL import Image
-from img_features import load_and_set as l
+from SVM_image_features import load_and_set as l
 
+# script for augmenting the dataset by fliping horizontally all the images
 path = 'data/balanced_1/train/1/'
 
 d = l.load_directory(path)

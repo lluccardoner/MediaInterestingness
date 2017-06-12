@@ -1,6 +1,13 @@
+"""
+Author: Lluc Cardoner
+
+Script for predicting image interestingness with the trained model.
+
+"""
+
 import numpy as np
 from keras.models import model_from_json
-import img_features.load_and_set as l
+import SVM_image_features.load_and_set as l
 from keras.models import Model
 import h5py
 
@@ -10,12 +17,12 @@ total_video_num_devtest = 52
 total_video_num_testset = 26
 
 ###############################################
-number = '48'
-model_json_file = 'src/ResNet50_' + number + '_model.json'
+number = 48
+model_json_file = 'src/ResNet50_{}_model.json'.format(number)
 # model_weights_file = 'src/resnet50_' + number + '_weights.h5'
-model_weights_file = 'src/resnet50_' + number + '_weights.hdf5'
-model_predictions_file = 'src/resnet50_' + number + '_predictions.h5'
-tofile = '/home/lluc/Documents/trec_eval.8.1/ResNet50_results/me16in_wien_image_resnet' + number + '.txt'
+model_weights_file = 'src/resnet50_{}_weights.hdf5'.format(number)
+model_predictions_file = 'src/resnet50_{}_predictions.h5'.format(number)
+tofile = '/home/lluc/Documents/trec_eval.8.1/ResNet50_results/me16in_wien_image_resnet{}.txt'.format(number)
 ################################################
 
 # Load images
@@ -40,13 +47,13 @@ model.summary()
 print ('Predicting...')
 score = loaded_model.predict(test_img)
 score = np.array(score)
-# score = np.where(score == score.max())[0]
 print ('Score', score.shape)
 
 # save predictions
 f = h5py.File(model_predictions_file, 'w')
 f.create_dataset(model_predictions_file, data=score)
 
+# save predictions in formatted style
 txtfile = open(tofile, 'w')
 i = 0
 print (score)

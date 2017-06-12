@@ -2,7 +2,7 @@ import json
 import os
 
 import video.pre_processing.video_prop as vp
-from img_features import load_and_set as l
+from SVM_image_features import load_and_set as l
 
 segments_dir_devset = '/home/lluc/Documents/ME16IN/devset/videos/video_{}/movies'
 segments_dir_testset = '/home/lluc/Documents/ME16IN/testset/videos/video_{}/movies'

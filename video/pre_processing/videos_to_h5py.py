@@ -6,7 +6,7 @@ import h5py
 import logging
 import numpy as np
 import video.pre_processing.video_prop as vp
-from img_features import load_and_set as l
+from SVM_image_features import load_and_set as l
 import progressbar
 from telegramBot import bot
 

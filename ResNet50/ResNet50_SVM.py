@@ -1,8 +1,15 @@
+"""
+Author: Lluc Cardoner
+
+Train a SVM classifier with the ResNet50 features for predicting image interestingness.
+The results are worst than using a deep learning architecture.
+
+"""
 from keras.applications.resnet50 import ResNet50
 from keras.models import Model
 from sklearn.svm import SVC
 
-import img_features.load_and_set as l
+import SVM_image_features.load_and_set as l
 from sklearn.svm import OneClassSVM
 import time
 import numpy as np
@@ -33,12 +40,12 @@ tr_img, labels = l.load_label_and_images_devset()
 print('Train images: ', tr_img.shape)  # (5054, 224, 224, 3)
 print ('Labels: ', labels.shape)  # (5054,)
 
-# Extract ResNet img_features for all the images
-print ('Extracting train img_features...')
+# Extract ResNet SVM_image_features for all the images
+print ('Extracting train SVM_image_features...')
 tr_features = base_model.predict(tr_img)
 print ('Features: ', tr_features.shape)  # (5054, 2048)
 
-# Train the classifier with the img_features
+# Train the classifier with the SVM_image_features
 print ('Fit classifier...')
 # clf = OneClassSVM(kernel=kernel)
 clf = SVC(kernel=kernel, probability=True, degree=degree, class_weight=class_weight)
@@ -54,8 +61,8 @@ test_img, names = l.load_labeled_images_testset()
 print('Test images: ', test_img.shape)  # (2342, 224, 224, 3)
 print ('Names: ', names.shape)  # (2342, 2)
 
-# Extract ResNet img_features for the testing images
-print ('Extracting test img_features...')
+# Extract ResNet SVM_image_features for the testing images
+print ('Extracting test SVM_image_features...')
 test_features = base_model.predict(test_img)
 print ('Features: ', test_features.shape)  # (2342, 2048)
 

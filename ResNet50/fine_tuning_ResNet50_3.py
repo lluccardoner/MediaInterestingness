@@ -1,3 +1,12 @@
+"""
+Author: Lluc Cardoner
+
+Third script for fine-tuning the ResNet50 for predicting image interestingness.
+Using data augmentation with Keras with ImageDataGenerator
+Also using Keras callbacks
+
+"""
+
 import logging
 import time
 import traceback
@@ -13,11 +22,6 @@ from keras.preprocessing.image import ImageDataGenerator
 
 import bot
 
-#########################################
-# Using data augmentation with Keras    #
-# ImageDataGenerator                    #
-# Using keras callbacks                 #
-#########################################
 try:
     # Execution time
     t0 = time.time()
@@ -80,7 +84,7 @@ try:
 
     test_datagen = ImageDataGenerator()
 
-    # TODO change directory
+    # TODO change directory to choose dataset
     train_generator = train_datagen.flow_from_directory(
         'data/train',
         target_size=(224, 224),
@@ -111,7 +115,7 @@ try:
     val_loss = []
     tr_acc = []
     val_acc = []
-    # TODO change number epochs, class weights
+    # TODO change number epochs, class weights for experiments
     history = model.fit_generator(
         train_generator,
         samples_per_epoch=nb_train_samples,
@@ -172,6 +176,8 @@ try:
     model_json = model.to_json()
     with open(model_json_file, "w") as json_file:
         json_file.write(model_json)
+
+    # not used if callbacks are used
     # print("saving...")
     # model.save_weights(model_weights_file) # is done by the check point
 

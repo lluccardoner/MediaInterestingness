@@ -1,3 +1,12 @@
+"""
+
+Author: Lluc Cardoner
+
+Second script for fine-tuning the ResNet50 for predicting image interestingness.
+Using data augmentation with Keras with ImageDataGenerator
+
+"""
+
 import logging
 import traceback
 
@@ -11,10 +20,6 @@ from keras.preprocessing.image import ImageDataGenerator
 
 from telegramBot import bot
 
-#########################################
-# Using data augmentation with Keras    #
-# ImageDataGenerator                    #
-#########################################
 try:
     t0 = time.time()
 

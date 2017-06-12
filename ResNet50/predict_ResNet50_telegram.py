@@ -1,9 +1,12 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# Simple Bot to reply to Telegram messages. This is built on the API wrapper, see
-# echobot2.py to see the same example built on the telegram.ext bot framework.
-# This program is dedicated to the public domain under the CC0 license.
+"""
+
+Author: Lluc Cardoner
+Use telegram bot from python-telegram-bot/python-telegram-bot on github
+to send and image and return the prediction through telegram
+
+In developement...
+
+"""
 
 import logging
 import telegram
@@ -18,7 +21,7 @@ from keras.preprocessing import image
 logger = logging.getLogger(__name__)
 
 
-def get_prediction(image, model_num=37):
+def get_prediction(image, model_num=37): # model 37 gives the best MAP results
     total_video_num_devtest = 52
     total_video_num_testset = 26
 
@@ -35,6 +38,7 @@ def get_prediction(image, model_num=37):
     loaded_model.load_weights(model_weights_file)
 
     model = Model(input=loaded_model.input, output=loaded_model.output)
+    model.summary()
 
     # Get predictions
     print ('Predicting...')

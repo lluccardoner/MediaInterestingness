@@ -7,6 +7,7 @@ from sklearn.utils.testing import assert_true
 from sklearn.utils.testing import assert_equal
 
 
+# tests for computing class weights with sklearn. Finally the mathematical model was used instead.
 def test_compute_class_weight():
     """Test (and demo) compute_class_weight."""
     classes, y = np.unique(np.asarray([2, 2, 2, 3, 3, 4]), return_inverse=True)

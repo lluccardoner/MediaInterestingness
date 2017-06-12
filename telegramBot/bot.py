@@ -1,3 +1,12 @@
+"""
+
+Author: Lluc Cardoner
+Thanks to: Oriol Bernal
+
+Functions to send a message to a telegram bot when training a deep network.
+
+"""
+
 import telegram
 
 

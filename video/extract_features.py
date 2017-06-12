@@ -1,3 +1,12 @@
+"""
+
+Author: Lluc Cardoner
+Code from: Alberto Montes
+
+Extract features of each video for each clip of 16 frames.
+
+"""
+
 from __future__ import absolute_import
 
 import argparse

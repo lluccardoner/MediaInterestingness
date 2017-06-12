@@ -1,3 +1,10 @@
+"""
+Author: Lluc Cardoner
+
+First script for fine-tuning the ResNet50 for predicting image interestingness.
+
+"""
+
 import time
 
 import matplotlib.pyplot as plt
@@ -8,7 +15,7 @@ from keras.models import Model
 from keras.optimizers import Adam
 from keras.utils.np_utils import to_categorical
 
-import img_features.load_and_set as l
+import SVM_image_features.load_and_set as l
 from telegramBot import bot
 
 t0 = time.time()
