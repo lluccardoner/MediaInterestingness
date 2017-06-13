@@ -8,6 +8,7 @@ In developement...
 
 """
 
+from __future__ import print_function
 import logging
 import telegram
 from telegram.error import NetworkError, Unauthorized
@@ -18,18 +19,16 @@ from keras.models import Model
 from keras.models import model_from_json
 from keras.preprocessing import image
 
-logger = logging.getLogger(__name__)
 
-
-def get_prediction(image, model_num=37): # model 37 gives the best MAP results
-    total_video_num_devtest = 52
-    total_video_num_testset = 26
-
+def get_prediction(img_path, model_num=37):  # model 37 gives the best MAP results
+    img = image.load_img(img_path, target_size=(224, 224))
+    img = image.img_to_array(img)
+    img = img.reshape(1, 224, 224, 3)
     model_json_file = 'src/ResNet50_{}_model.json'.format(model_num)
     model_weights_file = 'src/resnet50_{}_weights.hdf5'.format(model_num)
 
     # Load json and create model
-    print ('Loading model and weights...')
+    print('Loading model and weights...')
     json_file = open(model_json_file, 'r')
     loaded_model_json = json_file.read()
     json_file.close()
@@ -41,10 +40,11 @@ def get_prediction(image, model_num=37): # model 37 gives the best MAP results
     model.summary()
 
     # Get predictions
-    print ('Predicting...')
-    score = loaded_model.predict(image)
+    print('Predicting...')
+    print(img.shape)
+    score = loaded_model.predict(img, verbose=2)
     score = np.array(score)
-    print ('Score', score.shape)
+    print('Score', score.shape)
 
     return score
 
@@ -94,20 +94,20 @@ def photo(bot):
         update_id = update.update_id + 1
 
         if update.message:
-            print (update.message)
+            print(update.message)
             user = update.message.from_user
             try:
                 photo_file = bot.get_file(update.message.photo[-1].file_id)
                 photo_file.download('user_photo.jpg')
-                # img = image.load_img(path, target_size=(224, 224))
-                # img = image.img_to_array(img)
-                logger.info("Photo of %s: %s" % (user.first_name, 'user_photo.jpg'))
                 update.message.reply_text('Great! I will send the prediction. Wait...')
-                # get_prediction(img)
+                p = get_prediction('user_photo.jpg')
+                print("Prediction", p)
+                update.message.reply_text('No interesting: {}\nInteresting: {}'.format(p[0][0], p[0][1]))
             except:
                 continue
 
 
-
 if __name__ == '__main__':
     main()
+    #p = get_prediction('user_photo.jpg')
+    #print (p[0][0], p[0][1])

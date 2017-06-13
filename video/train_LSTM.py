@@ -10,6 +10,7 @@ from __future__ import print_function
 import logging
 import traceback
 
+import keras
 import numpy as np
 import progressbar
 from keras.layers import (LSTM, BatchNormalization, Convolution3D, Dense, Dropout, Flatten, Input,
@@ -39,10 +40,12 @@ video_features_dir = '/home/lluc/PycharmProjects/TFG/video/video_features/devset
 video_annotations_file = '/home/lluc/PycharmProjects/TFG/video/data/annotations/devset-video.txt'
 ###########################################
 loss = 'mean_squared_error'
-optimizer = RMSprop(lr=0.000001)
 
 epochs = 100
 batch_size = 1
+
+lr = 0.000001
+optimizer = RMSprop(lr=lr)
 
 
 ###########################################
@@ -177,8 +180,23 @@ try:
     print('Fitting model ' + str(number))
     tr_loss = []
     val_loss = []
-    tr_acc = []
-    val_acc = []
+
+    '''
+    # just train with features of one video
+    X, Y, X_val, Y_val = get_train_val_data(video_num=0)
+    for i in range(1, epochs + 1):
+        print('Epoch {}/{}'.format(i,epochs))
+        history = model.fit(X,
+                            Y,
+                            batch_size=batch_size,
+                            validation_data=(X_val, Y_val),
+                            verbose=1,
+                            nb_epoch=1,
+                            shuffle=False)
+        tr_loss.extend(history.history['loss'])
+        val_loss.extend(history.history['val_loss'])
+    '''
+
     X_val, Y_val = get_train_val_data(video_num=0, split=False)  # get vector features of video 0 as validation for all
     for i in range(1, epochs + 1):
         for v in range(1, 52):
@@ -193,17 +211,18 @@ try:
                                 shuffle=False)
             print('Resetting model states')
             model.reset_states()
+            print(history.history)
         tr_loss.extend(history.history['loss'])
         val_loss.extend(history.history['val_loss'])
 
     # Show plots
-    x = np.arange(len(val_loss))
+    x = np.arange(len(tr_loss))
     fig = plt.figure(1)
     fig.suptitle('TRAINING vs VALIDATION', fontsize=14, fontweight='bold')
 
     # LOSS: TRAINING vs VALIDATION
     plt.plot(x, tr_loss, '--', linewidth=2, label='tr_loss')
-    plt.plot(x, val_loss, label='va_loss')
+    plt.plot(x, val_loss, label='val_loss')
     plt.legend(loc='upper right')
 
     print("\n Saving model...")
