@@ -7,10 +7,12 @@ Predicting video interestingness.
 
 """
 
-import numpy as np
 import time
+
+import numpy as np
 from sklearn.svm import SVC  # http://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#
-import SVM_image_features.load_and_set as l
+
+from image import SVM_image_features as l
 
 np.set_printoptions(threshold=np.nan)
 

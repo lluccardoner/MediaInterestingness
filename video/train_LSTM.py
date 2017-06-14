@@ -7,23 +7,21 @@ Training of an LSTM network for predicting video interestingness from C3D video 
 """
 
 from __future__ import print_function
+
 import logging
+import time
 import traceback
 
-import keras
+import h5py
+import matplotlib.pyplot as plt
 import numpy as np
 import progressbar
-from keras.layers import (LSTM, BatchNormalization, Convolution3D, Dense, Dropout, Flatten, Input,
-                          MaxPooling3D, TimeDistributed, ZeroPadding3D, Reshape)
-from keras.models import Model, Sequential
-from keras.optimizers import Adam, RMSprop
-import time
+from keras.layers import (LSTM, BatchNormalization, Dense, Dropout, Input,
+                          TimeDistributed)
+from keras.models import Model
+from keras.optimizers import RMSprop
+
 from telegramBot import bot
-from SVM_image_features import load_and_set as l
-import h5py
-import os
-import matplotlib.pyplot as plt
-from keras.utils.np_utils import to_categorical
 
 # Execution time
 t0 = time.time()
@@ -44,7 +42,7 @@ loss = 'mean_squared_error'
 epochs = 100
 batch_size = 1
 
-lr = 0.000001
+lr = 0.00000001
 optimizer = RMSprop(lr=lr)
 
 
@@ -211,7 +209,6 @@ try:
                                 shuffle=False)
             print('Resetting model states')
             model.reset_states()
-            print(history.history)
         tr_loss.extend(history.history['loss'])
         val_loss.extend(history.history['val_loss'])
 

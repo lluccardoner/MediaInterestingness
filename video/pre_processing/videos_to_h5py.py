@@ -1,13 +1,15 @@
 from __future__ import print_function
+
+import logging
 import os
 import traceback
 
 import h5py
-import logging
 import numpy as np
-import video.pre_processing.video_prop as vp
-from SVM_image_features import load_and_set as l
 import progressbar
+
+import video.pre_processing.video_prop as vp
+from image.SVM_image_features import load_and_set as l
 from telegramBot import bot
 
 
