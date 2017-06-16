@@ -2,7 +2,7 @@ import inspect
 import os
 import sys
 
-# path tools
+# path tools provided by Alex
 
 
 def get_solution_directory():

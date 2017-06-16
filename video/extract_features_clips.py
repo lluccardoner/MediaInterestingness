@@ -131,6 +131,7 @@ def save_clips_features():
     out_file = h5py.File('/home/lluc/PycharmProjects/TFG/video/data/features_clips.h5py', 'a')
     my_model = load_model()
 
+    '''
     # devset
     set = 'devset'
     devset = out_file.create_group(set)
@@ -146,6 +147,7 @@ def save_clips_features():
             Y = extract_features_clip(X, my_model)
             video.create_dataset(c, data=Y)
             bar.update(i)
+    '''
 
     # testset
     set = 'testset'
@@ -162,3 +164,5 @@ def save_clips_features():
             Y = extract_features_clip(X, my_model)
             video.create_dataset(c, data=Y)
             bar.update(i)
+
+save_clips_features()

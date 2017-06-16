@@ -9,6 +9,7 @@ Training of an LSTM network for predicting video interestingness from C3D video 
 from __future__ import print_function
 
 import logging
+import random
 import time
 import traceback
 
@@ -26,15 +27,14 @@ from telegramBot import bot
 # Execution time
 t0 = time.time()
 # Option to see all the np array on the console
-# np.set_printoptions(threshold=np.nan)
+np.set_printoptions(threshold=np.nan)
 
 ############################################
-number = 55  # Model number
+number = 57  # Model number
 model_json_file = 'src/LSTM_{}_model.json'.format(number)
 model_fig = 'src/model_{}.png'.format(number)
 model_checkpoint = 'src/LSTM_{}_weights.hdf5'.format(number)
-
-video_features_dir = '/home/lluc/PycharmProjects/TFG/video/video_features/devset/changed_fps'
+loss_file = 'src/LSTM_{}_losses.txt'.format(number)
 video_annotations_file = '/home/lluc/PycharmProjects/TFG/video/data/annotations/devset-video.txt'
 ###########################################
 loss = 'mean_squared_error'
@@ -42,10 +42,8 @@ loss = 'mean_squared_error'
 epochs = 100
 batch_size = 1
 
-lr = 0.00000001
+lr = 0.0001
 optimizer = RMSprop(lr=lr)
-
-
 ###########################################
 
 
@@ -168,7 +166,7 @@ def get_train_val_data(video_num=-1, split=True):
 
 
 try:
-    # bot.send_message('Model ' + str(number))
+    bot.send_message('Model ' + str(number))
 
     print('Compiling model')
     model = temporal_localization_network(True)
@@ -196,22 +194,36 @@ try:
     '''
 
     X_val, Y_val = get_train_val_data(video_num=0, split=False)  # get vector features of video 0 as validation for all
+    out_file = open(loss_file, 'w')
     for i in range(1, epochs + 1):
+        tr_vid = []
+        val_vid = []
         for v in range(1, 52):
-            print('Epoch {}/{}: video_{}'.format(i, epochs, v))
-            X, Y = get_train_val_data(video_num=v, split=False)
-            history = model.fit(X,
-                                Y,
-                                batch_size=batch_size,
-                                validation_data=(X_val, Y_val),
-                                verbose=1,
-                                nb_epoch=1,
-                                shuffle=False)
-            print('Resetting model states')
-            model.reset_states()
-        tr_loss.extend(history.history['loss'])
-        val_loss.extend(history.history['val_loss'])
+            # for v in random.sample(range(1, 52), 51):  # shuffle order of videos
+            if v != 16:  # video_16 causes NaN losses
+                print('Epoch {}/{}: video_{}'.format(i, epochs, v))
+                X, Y = get_train_val_data(video_num=v, split=False)
+                history = model.fit(X,
+                                    Y,
+                                    batch_size=batch_size,
+                                    validation_data=(X_val, Y_val),
+                                    verbose=1,
+                                    nb_epoch=1,
+                                    shuffle=False)
 
+                # for each video
+                out_file.write('{},{},{},{}\n'.format(i, v, history.history['loss'][0], history.history['val_loss'][0]))
+                print('Resetting model states')
+                model.reset_states()
+                tr_vid.extend(history.history['loss'])
+                val_vid.extend(history.history['val_loss'])
+
+        # in each epoch
+        out_file.write('{},{},{},{}\n'.format(i, -1, np.mean(tr_vid), np.mean(val_vid)))
+        tr_loss.extend([np.mean(tr_vid)])
+        val_loss.extend([np.mean(val_vid)])
+
+    out_file.close()
     # Show plots
     x = np.arange(len(tr_loss))
     fig = plt.figure(1)
@@ -229,8 +241,9 @@ try:
     model.save_weights(model_checkpoint)
     plt.savefig(model_fig)
     execution_time = (time.time() - t0) / 60
-    print('Execution time model ' + str(number) + ' (min): ' + str(execution_time))
-    bot.send_message('Execution time model ' + str(number) + ' (min): ' + str(execution_time))
+    msg = 'Execution time model {} : {} (min)'.format(number, execution_time)
+    print(msg)
+    bot.send_message(msg)
     bot.send_image(model_fig)
 
 except Exception:

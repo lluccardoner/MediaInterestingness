@@ -10,7 +10,7 @@ import numpy as np
 from keras.models import Model
 from keras.models import model_from_json
 
-from image import SVM_image_features as l
+from image.SVM_image_features import load_and_set as l
 
 np.set_printoptions(threshold=np.nan)
 
