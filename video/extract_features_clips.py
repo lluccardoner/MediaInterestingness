@@ -165,4 +165,3 @@ def save_clips_features():
             video.create_dataset(c, data=Y)
             bar.update(i)
 
-save_clips_features()

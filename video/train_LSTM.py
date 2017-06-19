@@ -8,6 +8,7 @@ Training of an LSTM network for predicting video interestingness from C3D video 
 
 from __future__ import print_function
 
+import argparse
 import logging
 import random
 import time
@@ -30,7 +31,7 @@ t0 = time.time()
 np.set_printoptions(threshold=np.nan)
 
 ############################################
-number = 57  # Model number
+number = 61  # Model number
 model_json_file = 'src/LSTM_{}_model.json'.format(number)
 model_fig = 'src/model_{}.png'.format(number)
 model_checkpoint = 'src/LSTM_{}_weights.hdf5'.format(number)
@@ -41,15 +42,19 @@ loss = 'mean_squared_error'
 
 epochs = 100
 batch_size = 1
+video_validation = 0
+shuffled = False
 
-lr = 0.0001
+lr = 0.00000001
 optimizer = RMSprop(lr=lr)
+
+
 ###########################################
 
 
 def load_features_and_labels(video_num=-1):
-    in_file = h5py.File('/home/lluc/PycharmProjects/TFG/video/data/features_labels_clips.h5py')
-    out_file = h5py.File('/home/lluc/PycharmProjects/TFG/video/data/training.h5py')
+    in_file = h5py.File('/home/lluc/PycharmProjects/TFG/video/data/features_labels_clips.h5py', 'r')
+    out_file_train = h5py.File('/home/lluc/PycharmProjects/TFG/video/data/training.h5py', 'a')
     if video_num == -1:
 
         X = np.empty(shape=(0, 4096))
@@ -57,24 +62,27 @@ def load_features_and_labels(video_num=-1):
 
         bar = progressbar.ProgressBar(max_value=52)
 
-        for i, v in enumerate(in_file['devset_labels_weighted']):
+        for i in range(52):
+            v = 'video_{}'.format(i)
             f_num = len(in_file['devset'][v].items())
             l_num = len(in_file['devset_labels_weighted'][v].items())
             my_set = 'devset_labels_weighted'
             if l_num > f_num:
                 my_set = 'devset'
-            for c in in_file[my_set][v]:
+            for j in range(len(in_file[my_set][v].items())):
+                c = 'clip_{}'.format(j)
                 f = in_file['devset'][v][c][()]
                 l = in_file['devset_labels_weighted'][v][c][()]
                 X = np.append(X, f, axis=0)
                 Y.append(l)
             bar.update(i)
+        bar.finish()
         Y = np.array(Y)
         print(X.shape)
         print(Y.shape)
 
-        out_file.create_dataset('X', data=X)
-        out_file.create_dataset('Y', data=Y)
+        out_file_train.create_dataset('X', data=X)
+        out_file_train.create_dataset('Y', data=Y)
     else:
         X = np.empty(shape=(0, 4096))
         Y = []
@@ -86,17 +94,19 @@ def load_features_and_labels(video_num=-1):
         if l_num > f_num:
             my_set = 'devset'
         bar = progressbar.ProgressBar(max_value=min(f_num, l_num))
-        for i, c in enumerate(in_file[my_set][v]):
+        for i in range(len(in_file[my_set][v].items())):
+            c = 'clip_{}'.format(i)
             f = in_file['devset'][v][c][()]
             l = in_file['devset_labels_weighted'][v][c][()]
             X = np.append(X, f, axis=0)
             Y.append(l)
             bar.update(i)
+        bar.finish()
         Y = np.array(Y)
         print(X.shape)
         print(Y.shape)
 
-        vi = out_file.create_group(v)
+        vi = out_file_train.create_group(v)
         vi.create_dataset('X', data=X)
         vi.create_dataset('Y', data=Y)
 
@@ -164,8 +174,8 @@ def get_train_val_data(video_num=-1, split=True):
     else:
         return X, Y
 
-
 try:
+
     bot.send_message('Model ' + str(number))
 
     print('Compiling model')
@@ -193,14 +203,20 @@ try:
         val_loss.extend(history.history['val_loss'])
     '''
 
-    X_val, Y_val = get_train_val_data(video_num=0, split=False)  # get vector features of video 0 as validation for all
+    X_val, Y_val = get_train_val_data(video_num=video_validation,
+                                      split=False)  # get vector features of video 0 as validation for all
     out_file = open(loss_file, 'w')
     for i in range(1, epochs + 1):
         tr_vid = []
         val_vid = []
-        for v in range(1, 52):
-            # for v in random.sample(range(1, 52), 51):  # shuffle order of videos
-            if v != 16:  # video_16 causes NaN losses
+        if shuffled:
+            r = random.sample(range(0, 52), 52)  # shuffle order of videos
+        else:
+            r = range(0, 52)  # not shuffled
+
+        # training
+        for v in r:
+            if v != 16 and v != video_validation:  # video_16 causes NaN losses and we don't want to use the video for validation
                 print('Epoch {}/{}: video_{}'.format(i, epochs, v))
                 X, Y = get_train_val_data(video_num=v, split=False)
                 history = model.fit(X,
@@ -249,3 +265,5 @@ try:
 except Exception:
     logging.error(traceback.format_exc())
     bot.send_message('Exception caught')
+
+

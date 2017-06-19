@@ -1,7 +1,7 @@
 """
 Author: Lluc Cardoner
 
-Script for predicting image interestingness with the trained model.
+Script for predicting image interestingness of testset with the trained model.
 
 """
 

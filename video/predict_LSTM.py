@@ -17,11 +17,13 @@ total_video_num_devtest = 52
 total_video_num_testset = 26
 
 ###############################################
-number = 56
+number = 60
 
 model_json_file = 'src/LSTM_{}_model.json'.format(number)
 model_weights_file = 'src/LSTM_{}_weights.hdf5'.format(number)
 model_predictions_file = 'src/LSTM_{}_predictions.h5'.format(number)
+
+
 ################################################
 
 
@@ -34,12 +36,17 @@ def load_features(video_num=-1):
         X = np.empty(shape=(0, 4096))
 
         bar = progressbar.ProgressBar(max_value=26)
-
-        for i, v in enumerate(in_file['testset']):
-            for c in in_file['testset'][v]:
+        num_videos_testset = len(in_file['testset'].items())
+        k = 0
+        for i in range(52, 52 + num_videos_testset):
+            v = 'video_{}'.format(i)
+            for j in range(len(in_file['testset'][v].items())):
+                c = 'clip_{}'.format(j)
                 f = in_file['testset'][v][c][()]
                 X = np.append(X, f, axis=0)
-            bar.update(i)
+            k += 1
+            bar.update(k)
+        bar.finish()
         print(X.shape)
 
         out_file.create_dataset('X', data=X)
@@ -50,17 +57,19 @@ def load_features(video_num=-1):
         v = 'video_{}'.format(video_num)
         f_num = len(in_file['testset'][v].items())
         bar = progressbar.ProgressBar(max_value=f_num)
-        for i, c in enumerate(in_file['testset'][v]):
+        for i in range(len(in_file['testset'][v].items())):
+            c = 'clip_{}'.format(i)
             f = in_file['testset'][v][c][()]
             X = np.append(X, f, axis=0)
             bar.update(i)
+        bar.finish()
         print(X.shape)
 
         vi = out_file.create_group(v)
         vi.create_dataset('X', data=X)
 
 
-def get_train_data(video_num=-1):
+def get_test_data(video_num=-1):
     test_data_dir = '/home/lluc/PycharmProjects/TFG/video/data/testing.h5py'
     test_data_file = h5py.File(test_data_dir, 'r')
     if video_num == -1:
@@ -76,7 +85,6 @@ def get_train_data(video_num=-1):
 
     return X
 
-
 # load json and create model
 print ('Loading model and weights...')
 json_file = open(model_json_file, 'r')
@@ -89,16 +97,18 @@ loaded_model.load_weights(model_weights_file)
 model = Model(input=loaded_model.input, output=loaded_model.output)
 model.summary()
 
+
 # get predictions
 print ('Predicting...')
 f = h5py.File(model_predictions_file, 'w')
 LSTM_output = f.create_group('LSTM_output')
 bar = progressbar.ProgressBar(max_value=26)
 
+
 for i, v in enumerate(range(52, 52+26)):
-    X = get_train_data(v)  # get test features from one video
-    nb_instances = X.shape[0]
     loaded_model.reset_states()
+    X = get_test_data(v)  # get test features from one video
+    nb_instances = X.shape[0]
     Y = loaded_model.predict(X, batch_size=1)
     Y = Y.reshape(nb_instances, 1)
     # save predictions
