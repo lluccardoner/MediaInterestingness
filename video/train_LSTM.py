@@ -23,33 +23,11 @@ from keras.layers import (LSTM, BatchNormalization, Dense, Dropout, Input,
 from keras.models import Model
 from keras.optimizers import RMSprop
 
-from telegramBot import bot
+# from telegramBot import bot
+import bot
 
-# Execution time
-t0 = time.time()
 # Option to see all the np array on the console
 np.set_printoptions(threshold=np.nan)
-
-############################################
-number = 61  # Model number
-model_json_file = 'src/LSTM_{}_model.json'.format(number)
-model_fig = 'src/model_{}.png'.format(number)
-model_checkpoint = 'src/LSTM_{}_weights.hdf5'.format(number)
-loss_file = 'src/LSTM_{}_losses.txt'.format(number)
-video_annotations_file = '/home/lluc/PycharmProjects/TFG/video/data/annotations/devset-video.txt'
-###########################################
-loss = 'mean_squared_error'
-
-epochs = 100
-batch_size = 1
-video_validation = 0
-shuffled = False
-
-lr = 0.00000001
-optimizer = RMSprop(lr=lr)
-
-
-###########################################
 
 
 def load_features_and_labels(video_num=-1):
@@ -112,9 +90,9 @@ def load_features_and_labels(video_num=-1):
 
 
 def temporal_localization_network(summary=False):
-    input_features = Input(batch_shape=(batch_size, 1, 4096,), name='features')
-    input_normalized = BatchNormalization(name='normalization')(input_features)
-    input_dropout = Dropout(p=.5)(input_normalized)
+    input_features = Input(batch_shape=(1, 1, 4096,), name='features')
+    # input_normalized = BatchNormalization(name='normalization')(input_features)
+    input_dropout = Dropout(p=.5)(input_features)
     lstm = LSTM(512, return_sequences=True, stateful=True, name='lsmt1')(input_dropout)
     output_dropout = Dropout(p=.5)(lstm)
     output = TimeDistributed(Dense(1, activation='sigmoid'), name='fc')(output_dropout)
@@ -174,96 +152,144 @@ def get_train_val_data(video_num=-1, split=True):
     else:
         return X, Y
 
-try:
 
-    bot.send_message('Model ' + str(number))
+def train_LSTM(number=66, video_validation=0, epochs=100, batch_size=1, shuffled=True, lr=0.00000001):
+    # Execution time
+    t0 = time.time()
+    ############################################
+    model_json_file = '/home/lluc/PycharmProjects/TFG/video/src/LSTM_{}_model.json'.format(number)
+    model_fig = '/home/lluc/PycharmProjects/TFG/video/src/model_{}.png'.format(number)
+    model_checkpoint = '/home/lluc/PycharmProjects/TFG/video/src/LSTM_{}_weights.hdf5'.format(number)
+    loss_file = '/home/lluc/PycharmProjects/TFG/video/src/LSTM_{}_losses.txt'.format(number)
+    ###########################################
 
-    print('Compiling model')
-    model = temporal_localization_network(True)
-    model.compile(optimizer=optimizer, loss=loss)
-    print('Model Compiled!')
+    try:
+        bot.send_message('Model ' + str(number))
+        bot.send_message(
+            'Validation: {}, '
+            'Epochs: {}, '
+            'Batch: {} ,'
+            'Shuffle: {} ,'
+            'LR: {}'.format(video_validation, epochs, batch_size, shuffled, lr)
+        )
 
-    print('Fitting model ' + str(number))
-    tr_loss = []
-    val_loss = []
+        print('Compiling model')
+        model = temporal_localization_network(True)
+        loss = 'mean_squared_error'
+        optimizer = RMSprop(lr=lr)
+        model.compile(optimizer=optimizer, loss=loss)
+        print('Model Compiled!')
 
-    '''
-    # just train with features of one video
-    X, Y, X_val, Y_val = get_train_val_data(video_num=0)
-    for i in range(1, epochs + 1):
-        print('Epoch {}/{}'.format(i,epochs))
-        history = model.fit(X,
-                            Y,
-                            batch_size=batch_size,
-                            validation_data=(X_val, Y_val),
-                            verbose=1,
-                            nb_epoch=1,
-                            shuffle=False)
-        tr_loss.extend(history.history['loss'])
-        val_loss.extend(history.history['val_loss'])
-    '''
+        print('Fitting model ' + str(number))
+        tr_loss = []
+        val_loss = []
 
-    X_val, Y_val = get_train_val_data(video_num=video_validation,
-                                      split=False)  # get vector features of video 0 as validation for all
-    out_file = open(loss_file, 'w')
-    for i in range(1, epochs + 1):
-        tr_vid = []
-        val_vid = []
-        if shuffled:
-            r = random.sample(range(0, 52), 52)  # shuffle order of videos
-        else:
-            r = range(0, 52)  # not shuffled
+        '''
+        # just train with features of one video
+        X, Y, X_val, Y_val = get_train_val_data(video_num=0)
+        for i in range(1, epochs + 1):
+            print('Epoch {}/{}'.format(i,epochs))
+            history = model.fit(X,
+                                Y,
+                                batch_size=batch_size,
+                                validation_data=(X_val, Y_val),
+                                verbose=1,
+                                nb_epoch=1,
+                                shuffle=False)
+            tr_loss.extend(history.history['loss'])
+            val_loss.extend(history.history['val_loss'])
+        '''
 
-        # training
-        for v in r:
-            if v != 16 and v != video_validation:  # video_16 causes NaN losses and we don't want to use the video for validation
-                print('Epoch {}/{}: video_{}'.format(i, epochs, v))
-                X, Y = get_train_val_data(video_num=v, split=False)
-                history = model.fit(X,
-                                    Y,
-                                    batch_size=batch_size,
-                                    validation_data=(X_val, Y_val),
-                                    verbose=1,
-                                    nb_epoch=1,
-                                    shuffle=False)
+        X_val, Y_val = get_train_val_data(video_num=video_validation,
+                                          split=False)  # get vector features of video 0 as validation for all
+        out_file = open(loss_file, 'w')
+        for i in range(1, epochs + 1):
+            tr_vid = []
+            val_vid = []
+            if shuffled:
+                r = random.sample(range(0, 52), 52)  # shuffle order of videos
+            else:
+                r = range(0, 52)  # not shuffled
 
-                # for each video
-                out_file.write('{},{},{},{}\n'.format(i, v, history.history['loss'][0], history.history['val_loss'][0]))
-                print('Resetting model states')
-                model.reset_states()
-                tr_vid.extend(history.history['loss'])
-                val_vid.extend(history.history['val_loss'])
+            # training
+            for v in r:
+                if v != 16 and v != video_validation:  # video_16 causes NaN losses and we don't want to use the video for validation
+                    print('Epoch {}/{}: video_{}'.format(i, epochs, v))
+                    X, Y = get_train_val_data(video_num=v, split=False)
+                    history = model.fit(X,
+                                        Y,
+                                        batch_size=batch_size,
+                                        validation_data=(X_val, Y_val),
+                                        verbose=1,
+                                        nb_epoch=1,
+                                        shuffle=False)
 
-        # in each epoch
-        out_file.write('{},{},{},{}\n'.format(i, -1, np.mean(tr_vid), np.mean(val_vid)))
-        tr_loss.extend([np.mean(tr_vid)])
-        val_loss.extend([np.mean(val_vid)])
+                    # for each video
+                    out_file.write(
+                        '{},{},{},{}\n'.format(i, v, history.history['loss'][0], history.history['val_loss'][0]))
+                    print('Resetting model states')
+                    model.reset_states()
+                    tr_vid.extend(history.history['loss'])
+                    val_vid.extend(history.history['val_loss'])
 
-    out_file.close()
-    # Show plots
-    x = np.arange(len(tr_loss))
-    fig = plt.figure(1)
-    fig.suptitle('TRAINING vs VALIDATION', fontsize=14, fontweight='bold')
+            # in each epoch
+            out_file.write('{},{},{},{}\n'.format(i, -1, np.mean(tr_vid), np.mean(val_vid)))
+            tr_loss.extend([np.mean(tr_vid)])
+            val_loss.extend([np.mean(val_vid)])
 
-    # LOSS: TRAINING vs VALIDATION
-    plt.plot(x, tr_loss, '--', linewidth=2, label='tr_loss')
-    plt.plot(x, val_loss, label='val_loss')
-    plt.legend(loc='upper right')
+        out_file.close()
+        # Show plots
+        x = np.arange(len(tr_loss))
+        fig = plt.figure(1)
+        fig.suptitle('TRAINING vs VALIDATION', fontsize=14, fontweight='bold')
 
-    print("\n Saving model...")
-    model_json = model.to_json()
-    with open(model_json_file, "w") as json_file:
-        json_file.write(model_json)
-    model.save_weights(model_checkpoint)
-    plt.savefig(model_fig)
-    execution_time = (time.time() - t0) / 60
-    msg = 'Execution time model {} : {} (min)'.format(number, execution_time)
-    print(msg)
-    bot.send_message(msg)
-    bot.send_image(model_fig)
+        # LOSS: TRAINING vs VALIDATION
+        plt.plot(x, tr_loss, '--', linewidth=2, label='tr_loss')
+        plt.plot(x, val_loss, label='val_loss')
+        plt.legend(loc='upper right')
 
-except Exception:
-    logging.error(traceback.format_exc())
-    bot.send_message('Exception caught')
+        print("\n Saving model...")
+        model_json = model.to_json()
+        with open(model_json_file, "w") as json_file:
+            json_file.write(model_json)
+        model.save_weights(model_checkpoint)
+        plt.savefig(model_fig)
+        execution_time = (time.time() - t0) / 60
+        msg = 'Execution time model {} : {} (min)'.format(number, execution_time)
+        print(msg)
+        bot.send_message(msg)
+        bot.send_image(model_fig)
+
+    except Exception:
+        logging.error(traceback.format_exc())
+        bot.send_message('Exception caught')
 
 
+train_LSTM()
+
+# if __name__ == '__main__':
+#     parser = argparse.ArgumentParser(description='Train LSTM')
+#
+#     parser.add_argument('--id', dest='experiment_id', default=0,
+#                         help='Experiment ID to track and not overwrite resulting models')
+#     parser.add_argument('-v', '--validation', type=int, dest='validation', default=0,
+#                         help='Video used for validation (default: %(default)s)')
+#     parser.add_argument('-e', '--epoch', type=int, dest='epoch', default=100,
+#                         help='Number of epochs to train (default: %(default)s)')
+#     parser.add_argument('-b', '--batch', type=int, dest='batch', default=1,
+#                         help='Batch size (default: %(default)s)')
+#     parser.add_argument('-s', '--shuffle', type=str, dest='shuffle', default=False,
+#                         help='Shuffle the videos  (default: %(default)s)')
+#     parser.add_argument('-l', '--learning', type=float, dest='lr', default=0.0001,
+#                         help='Shuffle the videos  (default: %(default)s)')
+#
+#     args = parser.parse_args()
+#
+#     train_LSTM(
+#         number=args.experiment_id,
+#         video_validation=args.validation,
+#         epochs=args.epoch,
+#         batch_size=args.batch,
+#         shuffled=args.shuffle,
+#         lr=args.lr
+#     )

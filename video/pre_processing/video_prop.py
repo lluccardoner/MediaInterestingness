@@ -1,3 +1,11 @@
+"""
+Author: Lluc Cardoner
+Code source: Alberto Montes
+
+Script for extracting video properties.
+
+"""
+
 import cv2
 import numpy as np
 

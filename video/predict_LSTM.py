@@ -17,7 +17,7 @@ total_video_num_devtest = 52
 total_video_num_testset = 26
 
 ###############################################
-number = 60
+number = 65
 
 model_json_file = 'src/LSTM_{}_model.json'.format(number)
 model_weights_file = 'src/LSTM_{}_weights.hdf5'.format(number)
@@ -70,6 +70,7 @@ def load_features(video_num=-1):
 
 
 def get_test_data(video_num=-1):
+    # test_data_dir = '/home/lluc/PycharmProjects/TFG/video/data/training.h5py'
     test_data_dir = '/home/lluc/PycharmProjects/TFG/video/data/testing.h5py'
     test_data_file = h5py.File(test_data_dir, 'r')
     if video_num == -1:
@@ -102,10 +103,13 @@ model.summary()
 print ('Predicting...')
 f = h5py.File(model_predictions_file, 'w')
 LSTM_output = f.create_group('LSTM_output')
-bar = progressbar.ProgressBar(max_value=26)
+
+number_videos = 52
+bar = progressbar.ProgressBar(max_value=number_videos)
 
 
-for i, v in enumerate(range(52, 52+26)):
+for i, v in enumerate(range(52, 52+number_videos)):
+# for i, v in enumerate(range(number_videos)):
     loaded_model.reset_states()
     X = get_test_data(v)  # get test features from one video
     nb_instances = X.shape[0]

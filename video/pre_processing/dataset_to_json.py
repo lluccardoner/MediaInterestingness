@@ -1,3 +1,10 @@
+"""
+Author: Lluc Cardoner
+
+Script for making a json file with all the dataset info.
+
+"""
+
 import json
 import os
 
@@ -57,7 +64,7 @@ def data_to_json():
     })
     # -------------------------------------------------
     testset_dic = {}
-    total_train_segments = 0
+    total_test_segments = 0
     videos_dic = {}
     for v in range(devset_num_videos, devset_num_videos + testset_num_videos):
         print (v)
@@ -86,16 +93,15 @@ def data_to_json():
             'num_segments': total_segments,
             'num_frames': total_frames
         })
-        total_train_segments += total_segments
+        total_test_segments += total_segments
     devset_dic['testset'] = []
     devset_dic['testset'].append({
         'num_videos': testset_num_videos,
-        'num_segments': total_dev_segments,
+        'num_segments': total_test_segments,
         'videos': videos_dic
     })
     # -------------------------------------------------
-    data = {}
-    data['dataset'] = []
+    data = {'dataset': []}
     data['dataset'].append(devset_dic)
     data['dataset'].append(testset_dic)
 
@@ -103,3 +109,4 @@ def data_to_json():
         json.dump(data, outfile)
 
 
+data_to_json()

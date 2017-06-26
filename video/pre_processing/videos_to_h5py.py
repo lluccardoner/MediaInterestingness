@@ -1,3 +1,10 @@
+"""
+Author: Lluc Cardoner
+
+Script for storing all videos to a h5py file for further data manipulation.
+
+"""
+
 from __future__ import print_function
 
 import logging

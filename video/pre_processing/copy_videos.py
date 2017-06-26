@@ -1,4 +1,10 @@
-# copy videos with less than 16 frames
+"""
+Author: Lluc Cardoner
+
+Script for copying the videos with less than 16 frames.
+Deprecated.
+
+"""
 
 import os
 from shutil import copyfile

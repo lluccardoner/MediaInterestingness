@@ -1,3 +1,10 @@
+"""
+Author: Lluc Cardoner
+
+Script for predicting label the feature vectors extracted from clips of 16 frames.
+
+"""
+
 from __future__ import print_function
 from matplotlib import pyplot as plt
 import numpy as np
@@ -10,6 +17,7 @@ out_file = h5py.File('/home/lluc/PycharmProjects/TFG/video/data/features_labels_
 
 
 class Segment:
+    """Class that represents a video segment and its properties."""
     def __init__(self, video, name, label, prob, rank):
         self.video = video
         self.name = name

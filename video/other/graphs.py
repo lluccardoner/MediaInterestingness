@@ -14,9 +14,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-model_number = 60
+model_number = 65
 model_losses = '/home/lluc/PycharmProjects/TFG/video/src/LSTM_{}_losses.txt'.format(model_number)
 model_fig = '/home/lluc/PycharmProjects/TFG/video/src/model_{}_{}.png'.format(model_number, 0)
+predictions = '/home/lluc/PycharmProjects/TFG/video/src/LSTM_{}_predictions.h5'.format(model_number)
 
 
 def tr_val_loss(video_num=-1):
@@ -48,23 +49,51 @@ def labels_training_lstm(video_num=-1):
     return Y
 
 
-def labels_ground_truth(video_num=0, frame_based=True):
+def labels_ground_truth(video_num=0, set='devset', frame_based=True):
     """Return the labels of each segment from the ground truth"""
-    file_dir = '/home/lluc/Documents/ME16IN/devset/annotations/devset-video.txt'
+    file_dir = '/home/lluc/Documents/ME16IN/{}/annotations/{}-video.txt'.format(set, set)
     input_file = open(file_dir, 'r')
     input_file.seek(0)  # offset of 0
     labels = []
 
     for line in input_file:
-        line = line.rstrip().split(',')  # epoch/video/tr_loss/val_loss
+        line = line.rstrip().split(',')
         if line[0].split('_')[1] == str(video_num):
             # print(line)
-            seg = line[1][:-4].split('-')
-            num_frames = int(seg[1]) - int(seg[0])
-            for _ in range(num_frames):
+            if frame_based:
+                seg = line[1][:-4].split('-')
+                num_frames = int(seg[1]) - int(seg[0])
+                for _ in range(num_frames):
+                    labels.append(float(line[3]))
+            else:
                 labels.append(float(line[3]))
 
     return labels
+
+
+def predicted_labels(video_num, group, frames):
+    """Returns the predicted labels for one video.
+    group: 'LSTM_output' or 'back_label_mapping'"""
+    assert group in ['LSTM_output', 'back_label_mapping']
+    predictions_file = h5py.File(predictions)
+    if group == 'LSTM_output':
+        Y = predictions_file[group]['video_{}'.format(video_num)]['prediction'][()]
+    elif group == 'back_label_mapping':
+        Y = []
+        g = predictions_file[group]['video_{}'.format(video_num)]
+        for i in range(len(g.keys())):
+            for it in g.keys():
+                num = it.split('_')
+                seg = num[1][:-4].split('-')
+                num_frames = int(seg[1]) - int(seg[0])
+                if int(num[0]) == i:
+                    s = g[it][()]
+                    if frames:
+                        for _ in range(num_frames):
+                            Y.append(s)
+                    else:
+                        Y.append(s)
+    return Y
 
 
 def plots(value_dic, fig_dir, legend=True, show=False, save=True):
@@ -81,7 +110,7 @@ def plots(value_dic, fig_dir, legend=True, show=False, save=True):
     ax = fig.add_subplot(111)
     ax.set_color_cycle([cm(1. * i / NUM_COLORS) for i in range(NUM_COLORS)])
 
-    fig.suptitle('TRAINING and VALIDATION', fontsize=14, fontweight='bold')
+    # fig.suptitle('TRAINING and VALIDATION', fontsize=14, fontweight='bold')
 
     # LOSS: TRAINING and VALIDATION
     for key in value_dic:
@@ -107,37 +136,85 @@ def plots(value_dic, fig_dir, legend=True, show=False, save=True):
         plt.savefig(fig_dir)
 
 
-dic = {}
+def merge_dicts(*dict_args):
+    """
+    Given any number of dicts, shallow copy and merge into a new dict,
+    precedence goes to key value pairs in latter dicts.
+    """
+    result = {}
+    for dictionary in dict_args:
+        result.update(dictionary)
+    return result
 
 
-# # general training and validation losses
-# t, v = tr_val_loss()
-# dic['tr_loss'] = t
-# dic['val_loss'] = v
+def plot_train_val_losses(video_nums=None, video_val=0, training=True, validation=False):
+    """returns dictionary with the training and validation losses"""
+    dic = {}
+    # general training and validation losses
+    if video_nums is None:
+        t, v = tr_val_loss()
+        if training:
+            dic['tr_loss'] = t
+        if validation:
+            dic['val_loss'] = v
+
+    else:
+        # training and validation losses of videos
+        assert len(video_nums) > 0
+        for i in video_nums:
+            if i != 16 and i != video_val:
+                t, v = tr_val_loss(video_num=i)
+                if training:
+                    dic['tr_loss_{}'.format(i)] = t
+                if validation:
+                    dic['val_loss_video_{}'.format(i)] = v
+    return dic
 
 
-# training and validation losses of videos
-# video_0 or video_51 are for validation!!!
-# for i in range(1, 52):
-#     if i != 16:
-#         t, v = tr_val_loss(video_num=i)
-#         dic['tr_loss_{}'.format(i)] = t
-#         # dic['val_loss_video_{}'.format(i)] = v
+def plot_clip_labels(video_num, frame_based=False):
+    """Returns dictionary with the clip labels used for training."""
+    dic = {}
+    # get the training labels for one video
+    tr_labels = labels_training_lstm(video_num)
+    if frame_based:
+        labels2 = []
+        for e in tr_labels:
+            for i in range(16):
+                labels2.append(e)
+        dic['label_clip_{}'.format(video_num)] = labels2
+    else:
+        dic['label_clip_{}'.format(video_num)] = tr_labels
 
 
-# get the training labels for one video
-vid = 0
-# tr_labels = labels_training_lstm(vid)
-# labels2 = []
-# # for e in tr_labels:
-# #     for i in range(16):
-# #         labels2.append(e)
-# dic['label_clip_{}'.format(vid)] = tr_labels
-
-# get the grountruth labels for one video
-# ann_labels = labels_ground_truth(vid, frame_based=True)
-# dic['label_seg_{}'.format(vid)] = ann_labels
+def plot_segment_labels(video_num, set, frames=True):
+    """Returns a dictionary with the ground truth labels of each segment."""
+    dic = {}
+    # get the ground truth labels for one video
+    ann_labels = labels_ground_truth(video_num, set=set, frame_based=frames)
+    dic['label_seg_{}'.format(video_num)] = ann_labels
+    print(dic)
+    return dic
 
 
+def plot_clip_prediction(video_num):
+    """Returns a dictionary with the predictions obtained for each clip/"""
+    dic = {}
+    # label predictions (for clips)
+    pred_labels = predicted_labels(video_num, 'LSTM_output', frames=False)
+    dic['pred_clips_{}'.format(video_num)] = pred_labels
+    print(dic)
+    return dic
+
+
+def plot_segment_predictions(video_num, frame_based):
+    """Returns the predictions obtained for each segment after back label mapping."""
+    dic = {}
+    pred_labels = predicted_labels(video_num, 'back_label_mapping', frames=frame_based)
+    dic['pred_seg_{}'.format(video_num)] = pred_labels
+    print(dic)
+    return dic
+
+
+data = merge_dicts(plot_segment_predictions(65, frame_based=True), plot_segment_labels(65, set='testset', frames=True))
 # print(dic.keys())
-plots(dic, model_fig, legend=True, show=True, save=False)
+plots(data, model_fig, legend=True, show=True, save=False)
