@@ -22,9 +22,8 @@ from keras.layers import (LSTM, BatchNormalization, Dense, Dropout, Input,
                           TimeDistributed)
 from keras.models import Model
 from keras.optimizers import RMSprop
-
-# from telegramBot import bot
-import bot
+from keras.utils.visualize_util import plot
+from telegramBot import bot
 
 # Option to see all the np array on the console
 np.set_printoptions(threshold=np.nan)
@@ -97,9 +96,9 @@ def temporal_localization_network(summary=False):
     output_dropout = Dropout(p=.5)(lstm)
     output = TimeDistributed(Dense(1, activation='sigmoid'), name='fc')(output_dropout)
     model = Model(input=input_features, output=output)
-
     if summary:
         model.summary()
+        plot(model, to_file='LSTM_network.png')
     return model
 
 
@@ -153,7 +152,7 @@ def get_train_val_data(video_num=-1, split=True):
         return X, Y
 
 
-def train_LSTM(number=66, video_validation=0, epochs=100, batch_size=1, shuffled=True, lr=0.00000001):
+def train_LSTM(number=67, video_validation=0, epochs=100, batch_size=1, shuffled=True, lr=0.00000001):
     # Execution time
     t0 = time.time()
     ############################################

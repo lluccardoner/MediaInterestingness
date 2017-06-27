@@ -11,8 +11,9 @@ import h5py
 import numpy as np
 from matplotlib import pyplot as plt
 
-model_num = 65
-predictions = '/home/lluc/PycharmProjects/TFG/video/src/LSTM_{}_predictions.h5'.format(model_num)
+model_num = 37
+data = 'resnet50_{}_predictions.h5'.format(model_num)
+predictions = '/home/lluc/PycharmProjects/TFG/image/ResNet50/src/{}'.format(data)
 pred_file = h5py.File(predictions, 'a')
 
 
@@ -89,30 +90,44 @@ def savitzky_golay(y, window_size, order, deriv=0, rate=1):
     return np.convolve(m[::-1], y, mode='valid')
 
 
-def calculate_threshold(video_num, second_derivative_threshold=0.01, smooth=True, save=True, plot=False):
-    """Calculates the threshold value for all the predicted labels for the segments of one video"""
-    pred = []
-    video_group = pred_file['back_label_mapping']['video_{}'.format(video_num)]
-    for seg in video_group:
-        pred.append(video_group[seg][()])
-    pred = np.array(pred)  # array with all the predicted labels of the segments of one video
-    pred = pred / pred.max(axis=0)
-    pred = np.sort(pred)  # sort the array from lower to higher
-    curve = savitzky_golay(pred, window_size=21, order=3)  # smooth the curve
+def running_mean(l, N):
+    s = 0
+    result = list(0 for x in l)
 
-    first_derivative = np.gradient(pred)
+    for i in range(0, N):
+        s = s + l[i]
+        result[i] = s / (i + 1)
+
+    for i in range(N, len(l)):
+        s = s - l[i - N] + l[i]
+        result[i] = s / N
+
+    return result
+
+
+def calculate_threshold(second_derivative_threshold=0.01, smooth=True, save=False, plot=False):
+    """Calculates the threshold value for all the predicted labels for the frames of one video"""
+    pred = pred_file['src'][data][()][:, 0]
+    pred = np.array(pred)  # array with all the predicted labels of the segments of one video
+    pred = np.sort(pred)  # sort the array from lower to higher
+    pred_norm = pred / pred.max(axis=0)
+    # curve = savitzky_golay(pred, window_size=21, order=3)  # smooth the curve
+    curve = running_mean(pred_norm, 5)  # smooth the curve
+
+    # no smoothed curve
+    first_derivative = np.gradient(pred_norm)
     second_derivative = np.gradient(first_derivative)
 
+    # smoothed curve
     first_derivative_c = np.gradient(curve)
     second_derivative_c = np.gradient(first_derivative_c)
 
-    x_threshold = 0
     der = second_derivative if not smooth else second_derivative_c
     for x, e in enumerate(der):
         if e > second_derivative_threshold:
-            x_threshold = x
             break
     print(x, pred[x])
+    print (pred)
     if plot:
         plt.figure(1)
         plt.subplot(221)
@@ -140,24 +155,23 @@ def calculate_threshold(video_num, second_derivative_threshold=0.01, smooth=True
     return pred[x]
 
 
-def create_submit_results(video_num, th, sdt):
+def create_submit_results(th, sdt):
     """Create the submit result file"""
-    output = '/home/lluc/PycharmProjects/TFG/trec_eval.8.1/LSTM_results/me16in_wien_video_LSTM{}-{}.txt'.format(model_num, sdt)
+    output = '/home/lluc/PycharmProjects/TFG/trec_eval.8.1/ResNet50_results/dynamic threshold/me16in_wien_image_resnet{}-{}.txt'.format(
+        model_num, sdt)
+    annotations = '/home/lluc/Documents/ME16IN/testset/annotations/testset-image.txt'
+    ann_file = open(annotations, 'r')
     out_file = open(output, 'a')
-    video_group = pred_file['back_label_mapping']['video_{}'.format(video_num)]
-    for i in range(len(video_group.keys())):  # to make sure it is in order
-        for seg in video_group:
-            name = seg.split('_')
-            if int(name[0]) == i:
-                prob = video_group[seg][()]
-                classification = 0 if prob < th else 1
-                out_file.write('video_{},{},{},{}\n'.format(video_num, name[1], classification, prob))
+    pred = pred_file['src'][data][()]
+    for i, line in enumerate(ann_file):
+        line = line.rstrip().split(',')
+        # print(line)
+        prob = pred[i, 0]
+        classification = 0 if prob < th else 1  # classification
+        out_file.write('{},{},{},{}\n'.format(line[0], line[1], classification, prob))
 
 
-# calculate_threshold(65, second_derivative_threshold=0.01, save=False, plot=True)
-
-for v in range(52, 52 + 26):
-    sdth = 0.005
-    threshold = calculate_threshold(v, second_derivative_threshold=sdth, smooth=True, save=False, plot=False)
-    print(v, threshold)
-    create_submit_results(v, th=threshold, sdt=sdth)
+print(predictions)
+sth = 0.01
+th = calculate_threshold(second_derivative_threshold=sth, save=False, plot=True)
+create_submit_results(th, sdt=sth)

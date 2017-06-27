@@ -54,18 +54,18 @@ print ('Score', score.shape)
 f = h5py.File(model_predictions_file, 'w')
 f.create_dataset(model_predictions_file, data=score)
 
-# save predictions in formatted style
-txtfile = open(tofile, 'w')
-i = 0
-print (score)
-for name in img_names:
-    prob = score[i]
-    if prob[0] > prob[1]:
-        pred = 0
-        p = prob[0]
-    else:
-        pred = 1
-        p = prob[1]
-    txtfile.write(name[0] + ',' + name[1] + ',' + str(pred) + ',' + str(p) + '\n')
-    i += 1
-txtfile.close()
+# # save predictions in formatted style with threshold 0.5
+# txtfile = open(tofile, 'w')
+# i = 0
+# print (score)
+# for name in img_names:
+#     prob = score[i]
+#     if prob[0] > prob[1]:
+#         pred = 0
+#         p = prob[0]
+#     else:
+#         pred = 1
+#         p = prob[1]
+#     txtfile.write(name[0] + ',' + name[1] + ',' + str(pred) + ',' + str(p) + '\n')
+#     i += 1
+# txtfile.close()
