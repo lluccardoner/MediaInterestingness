@@ -112,7 +112,7 @@ def calculate_threshold(video_num, second_derivative_threshold=0.01, smooth=True
         pred.append(video_group[seg][()])
     pred = np.array(pred)  # array with all the predicted labels of the segments of one video
     pred = np.sort(pred)  # sort the array from lower to higher
-    pred_norm = pred / pred.max(axis=0) # normalize between 0 and 1
+    pred_norm = pred / pred.max(axis=0)  # normalize between 0 and 1
     # curve = savitzky_golay(pred, window_size=21, order=3)  # smooth the curve
     curve = running_mean(pred_norm, 5)  # smooth the curve
 
@@ -157,6 +157,85 @@ def calculate_threshold(video_num, second_derivative_threshold=0.01, smooth=True
     return pred[x]
 
 
+def calculate_threshold_all_data(second_derivative_threshold=0.0, plot=False):
+    pred = []
+    labels = pred_file['back_label_mapping']
+    for v in labels:
+        # print(v)
+        for seg in labels[v]:
+            # print(seg)
+            pred.append(labels[v][seg][()])
+
+    pred = np.array(pred)  # array with all the predicted labels of the segments of one video
+    pred = np.sort(pred)  # sort the array from lower to higher
+    pred_norm = pred / pred.max(axis=0)  # normalize between 0 and 1
+    curve = running_mean(pred_norm, 5)  # smooth the curve
+
+    coefficients = np.polyfit(np.array(range(pred_norm.size)), pred_norm, deg=3)
+
+    f = lambda p: coefficients[0] * p ** 3 + coefficients[1] * p ** 2 + coefficients[2] * p + coefficients[3]
+    poly = np.fromfunction(f, shape=pred_norm.shape)  # fitted curve as a order 3 polynomial
+    # poly = poly / poly.max(axis=0)
+    # no smoothed curve
+    first_derivative = np.gradient(pred_norm)
+    second_derivative = np.gradient(first_derivative)
+
+    # smoothed curve
+    first_derivative_c = np.gradient(curve)
+    second_derivative_c = np.gradient(first_derivative_c)
+
+    # fitted curve
+    first_derivative_p = np.gradient(poly)
+    # first_derivative_p = first_derivative_p / first_derivative_p.max(axis=0)
+    second_derivative_p = np.gradient(first_derivative_p)
+    # second_derivative_p = second_derivative_p / second_derivative_p.max(axis=0)
+
+    # der = second_derivative if not smooth else second_derivative_c
+
+    # get the threshold
+    for x, e in enumerate(second_derivative_p):
+        if e > second_derivative_threshold:
+            break
+
+    # min_value = first_derivative_p.min(axis=0)
+    # x = np.where(first_derivative_p == min_value)[0][0]
+    print(x, pred[x])  # get the prediction at the x position
+
+    if plot:
+        plt.figure(1)
+        plt.subplot(221)
+        plt.plot(pred_norm)
+        plt.plot(poly)
+        # plt.subplot(334)
+        # plt.plot(curve)
+        plt.subplot(222)
+        plt.plot(poly)
+
+        # plt.subplot(332)
+        # plt.plot(range(first_derivative.size), first_derivative, c='r')
+        # plt.subplot(335)
+        # plt.plot(range(first_derivative_c.size), first_derivative_c, c='r')
+        plt.subplot(223)
+        plt.plot(range(first_derivative_p.size), first_derivative_p, c='r')
+        #
+        # plt.subplot(333)
+        # plt.plot(range(second_derivative.size), second_derivative, c='r')
+        # t = [second_derivative_threshold] * len(second_derivative)
+        # plt.plot(range(len(t)), t)
+        # plt.subplot(336)
+        # plt.plot(range(second_derivative_c.size), second_derivative_c, c='r')
+        # z = [second_derivative_threshold] * len(second_derivative_c)
+        # plt.plot(range(len(z)), z)
+        plt.subplot(224)
+        plt.plot(range(second_derivative_p.size), second_derivative_p, c='r')
+        # h = [second_derivative_threshold] * len(second_derivative_p)
+        # plt.plot(range(len(h)), h)
+
+        plt.show()
+
+    return pred[x]
+
+
 def create_submit_results(video_num, th, sdt):
     """Create the submit result file"""
     output = '/home/lluc/PycharmProjects/TFG/trec_eval.8.1/LSTM_results/me16in_wien_video_LSTM{}-{}.txt'.format(
@@ -172,10 +251,34 @@ def create_submit_results(video_num, th, sdt):
                 out_file.write('video_{},{},{},{}\n'.format(video_num, name[1], classification, prob))
 
 
+def create_all_submit_results(th, sdt):
+    """Create the submit result file"""
+    output = '/home/lluc/PycharmProjects/TFG/trec_eval.8.1/LSTM_results/me16in_wien_video_LSTM{}-{}-{}.txt'.format(
+        model_num, sdt, th)
+    out_file = open(output, 'a')
+    data = pred_file['back_label_mapping']
+    for v in data:
+        video_group = data[v]
+        for i in range(len(video_group.keys())):  # to make sure it is in order
+            for seg in video_group:
+                name = seg.split('_')
+                if int(name[0]) == i:
+                    prob = video_group[seg][()]
+                    classification = 0 if prob < th else 1  # classification
+                    out_file.write('{},{},{},{}\n'.format(v, name[1], classification, prob))
+
+
 # calculate_threshold(52, second_derivative_threshold=0.01, save=False, plot=True)
 
-for v in range(52, 52 + 26):
-    sdth = 0.01
-    threshold = calculate_threshold(v, second_derivative_threshold=sdth, smooth=True, save=False, plot=False)
-    print(v, threshold)
-    create_submit_results(v, th=threshold, sdt=sdth)
+# calculate threshold for al videos
+sdth = 0.0
+threshold = calculate_threshold_all_data(second_derivative_threshold=sdth, plot=True)
+# create_all_submit_results(th=threshold, sdt=sdth)
+
+
+# calculate different threshold for each video
+# for v in range(52, 52 + 26):
+#     sdth = 0.0
+#     threshold = calculate_threshold(v, second_derivative_threshold=sdth, smooth=True, save=False, plot=False)
+#     print(v, threshold)
+#     create_submit_results(v, th=threshold, sdt=sdth)
